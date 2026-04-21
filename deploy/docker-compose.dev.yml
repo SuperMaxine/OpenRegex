@@ -1,0 +1,120 @@
+# DEVELOPMENT ARCHITECTURE
+# Leverages hot-reloading targets and host-volumes for instant feedback on Frontend & Backend.
+# Workers are built and run in their production states to save resources and simplify the dev environment.
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/openregex-backend.dockerfile
+      target: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../apps/openregex-backend:/app/apps/openregex-backend
+      - ../libs:/app/libs
+    depends_on:
+      - redis
+    environment:
+      - AI_MAX_WORKERS=${AI_MAX_WORKERS:-}
+      - API_AI_ENDPOINT_ENABLE=${API_AI_ENDPOINT_ENABLE:-}
+      - API_REGEX_ENDPOINT_ENABLE=${API_REGEX_ENDPOINT_ENABLE:-}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-}
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/openregex-frontend.dockerfile
+      target: development
+    ports:
+      - "5000:5000"
+    environment:
+      - ROBOTS_META=${ROBOTS_META:-}
+    volumes:
+      - ../apps/openregex-frontend:/app/apps/openregex-frontend
+      - /app/apps/openregex-frontend/node_modules
+
+  worker-ai:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-ai.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+    environment:
+      - LLM_ENDPOINT=${LLM_ENDPOINT:-}
+      - LLM_MODEL=${LLM_MODEL:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_SSL_VERIFY=${LLM_SSL_VERIFY:-false}
+
+
+  worker-python:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-python.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-c-cpp:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-c-cpp.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-v8:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-v8.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-jvm:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-jvm.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-dotnet:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-dotnet.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-rust:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-rust.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-go:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-go.dockerfile
+      target: production
+    depends_on:
+      - redis
+
+  worker-php:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-php.dockerfile
+      target: production
+    depends_on:
+      - redis

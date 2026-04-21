@@ -1,212 +1,311 @@
-# OpenRegex
-
-[![License](https://img.shields.io/github/license/sunnev/openregex)]()
-[![Docker Pulls](https://img.shields.io/docker/pulls/sunnev/openregex)](https://hub.docker.com/r/sunnev/openregex)
-[![GitHub stars](https://img.shields.io/github/stars/sunnev/openregex)]()    
-[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/sunnev/openregex?label=latest)](https://github.com/sunnev/openregex/tags)
-
-<img src="static/logo.svg" alt="OpenRegex Interface Screenshot" width="640">
+<div align="center">
+  <img src="docs/static/logo.svg" alt="OpenRegex Logo" width="280" style="max-width: 100%; height: auto;">
+  <br>
+  <img src="docs/static/name.svg" alt="OpenRegex Name" width="450" style="max-width: 100%; height: auto; margin-top: 15px;">
+</div>
 
 Official website: **[OpenRegex.com](https://www.openregex.com)**
 
-OpenRegex is an open-source, self-hosted web application for testing and debugging regular expressions (regex).
+[![GitHub stars](https://img.shields.io/github/stars/sunnev/openregex)]()
 
-## Screenshots
+OpenRegex is a unified, open-source platform for testing, debugging, and analyzing regular expressions within isolated
+runtimes (Runtime-as-a-Service). It provides developers with a tool that guarantees 100% result consistency with the
+target production environment, eliminating the discrepancies between native regex dialects.
 
-<img src="assets/interface_light.png" alt="OpenRegex Interface Screenshot" width="640">
+<div align="center">
+  <img src="docs/static/screenshot.png" alt="OpenRegex Architecture" style="max-width: 100%; height: auto; margin-top: 15px;">
+</div>
 
-<img src="assets/interface_dark.png" alt="OpenRegex Interface Screenshot" width="640">
+---
 
-## Features
+## 🌟 Key Features
 
-* **Web Interface:** Access the tool through a user-friendly web browser.
-* **Self-Hosted:** Run the application on your own infrastructure for complete control and privacy.
-* **Simple Setup:** Relatively easy installation with clear instructions.
-* **Link support:** Easily share links with others to test regular
-  expressions. [Example](https://openregex.com/?link=eJx9kEFPwkAQhf_K2BNF2k3UEyElJiR6EgIRD50eSpnSxrLb7G5BRf6700WaJiaedifz3jfz5uRpb-yFw8F0jGgG08Xksa5f0j1F8zgNvpLT_XmJODs9nH3_28l-Na-6ihTiaogYZmrv83MRLCZPpS2aTVRYW5uxELvSxojHUCS3ztvYQukoNqvETWDAMT6sE_8qumJmKnsn_dwj_cXc_cfxRp7lcG9U8YIEVsG8JrmkHX2MwBYEGzIWdFuD5S_pG5TzPC-zMq3gSBswpSVQbHKiNmeIsquhNK4ZGNXojCCVWzBU5VAohm3DHkxTraB3EL5PSxOrRkpai24vlJfUwAJodNV5WsPWtZxPC9M6D6JbBiXHJY67-OTDSAh4pnf-AUszo1c)
-* **Multiple Engine Support:**
+* **Polyglot Micro-Workers:** Native engine execution via completely isolated Docker containers.
+* **Pattern Inspector:** Advanced React + Vite frontend for dynamic visual match inspection and group highlighting[cite: 1].
+* **AI-Powered Assistant (`worker-ai`):** An optional, independent worker using separate queues[cite: 1] designed specifically for regex.
+  It automatically generates complex patterns from natural language prompts, explains obscure syntax, and optimizes
+  inefficient queries. **🛡️ Security Note:** For production deployments, it is highly recommended to route requests
+  through an LLM proxy server (like **LiteLLM**) to safely manage and isolate your API keys rather than exposing them
+  directly to the worker environment.
+* **Zero-Trust Guardrails:** 1000ms SLA (engine-dependent overrides possible)[cite: 1], strict memory limits (e.g., 8MB heap limits for binary
+  engines), and multiprocessing isolation to prevent ReDoS attacks.
+* **Living Docs System:** Dynamic knowledge base featuring context-aware cheat sheets and engine-specific trivia (
+  Factograph).
+* **Smart Discovery:** Automatic heartbeat registration of worker node capabilities via Redis.
 
-  | Engine     | Description                                                                           | Documentation                                                                                                |
-    |------------|---------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-  | Python     | `re` Python's built-in regex engine.                                                  | [Link](https://docs.python.org/3.12/library/re.html)                                                         |
-  | Python     | `regex` Python's `regex` module, which supports additional features like lookbehinds. | [Link](https://pypi.org/project/regex/)                                                                      |                                                    
-  | Java       | Java's `java.util.regex` built-in regex engine.                                       | [Link](https://download.java.net/java/early_access/valhalla/docs/api/java.base/java/util/regex/Pattern.html) |
-  | JavaScript | JavaScript's `Node.js` provides a `RegExp` object.                                    | [Link](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions)                    |                                                                                                      |                                                                                                              
-  | C++        | C++'s `std::regex` engine.                                                            | [Link](https://cplusplus.com/reference/regex/)                                                               |                                                                                                            |
+---
 
-## Requirements
+## 🏗️ Architecture & Internal Design
 
-* **Python:** 3.12 or later (required)
-* **OpenJDK:** Required for Java regex engine.
-* **Node.js:** Required for JavaScript regex engine.
-* **g++:** Required for C++ regex engine.
-* **Docker:** Optional for containerized deployment.
-* **Basic Familiarity with Command Line:** For setting up the environment and running commands.
+OpenRegex is built on strict architectural guidelines to ensure high performance and maintainability. Detailed technical
+specifications can be found in the `docs/` directory.
 
-## Installation
+### Worker Node Architecture (`docs/WorkerNodeArchitecture.md`)
 
-These instructions will help you set up OpenRegex on your local machine.
+All worker nodes must interface with a Redis-backed queue system and adhere to strict execution SLAs.
 
-1.  **Set up a virtual environment (Recommended):**
+* **Persistent Execution:** Workers must not incur process startup overhead per request, keeping execution engines hot
+  in memory.
+* **Concurrent Polling:** The Redis queue polling mechanism (`BRPOP`) is completely decoupled from the regex execution
+  block to allow concurrent task processing.
+* **Claim-Check Pattern:** To bypass message broker memory limits, workers intercept large subject texts stored
+  temporarily in Redis using a `text_payload_id`.
+* **ReDoS Guardrails:** Every regex execution must be strictly bounded by a 1000ms SLA; if an engine hangs, it
+  is safely terminated[cite: 1].
+* **Data Contracts:** Communication relies on strict JSON payloads over Redis, utilizing `MatchRequest` inbound tasks
+  and `MatchResult` outbound tasks over Pub/Sub.
 
-    It's best practice to use a virtual environment to keep your project dependencies isolated.
+### Frontend Architecture (`docs/FrontendArchitecture.md`)
 
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate # On Linux/macOS
-    # Or on Windows: .venv\Scripts\activate
-    ```
+The React + Vite frontend uses a domain-driven, feature-based architecture to maintain a clean codebase[cite: 1].
 
-2.  **Install Python Dependencies:**
+* **The Dependency Rule:** The `features/` directory must never import from other `features/`, ensuring isolated
+  modules[cite: 1]. Both `core/` and `shared/` directories can only import from themselves or external packages.
+* **State Management:** Business logic and global state are never passed as props. Shared state belongs in `core/store/`
+  using Zustand with atomic selectors[cite: 1], while local UI state uses standard React `useState`.
+* **Feature Encapsulation:** All components, hooks, types, and utilities specific to a feature are kept inside its
+  respective folder and exposed only through a top-level `index.ts` file[cite: 1].
 
-    ```bash
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    ```
+---
 
-3.  **Install OpenJDK (Java Development Kit):**
+## ⚙️ Core Infrastructure
 
-    You'll need a Java Development Kit for the Java regex engine.
+| Component                | Role                 | Tech Stack                                                                             | Version                                                                                                                                         | Downloads                                                                       |
+|:-------------------------|:---------------------|:---------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------|
+| **Frontend**             | `openregex-frontend` | React + Vite UI. Handles visualization, and worker health monitoring.                  | [![Version](https://img.shields.io/docker/v/sunnev/openregex-frontend?label=latest)]([https://hub.docker.com/r/sunnev/openregex-frontend/tags](https://hub.docker.com/r/sunnev/openregex-frontend/tags))   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-frontend?label=)  |
+| **Backend**              | `openregex-backend`  | API Orchestrator. Manages Redis job queues, worker discovery, and security guardrails. | [![Version](https://img.shields.io/docker/v/sunnev/openregex-backend?label=latest)](https://hub.docker.com/r/sunnev/openregex-backend/tags)     | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-backend?label=)   |
+| **AI Worker** (Optional) | `worker-ai`          | LLM-powered Regex assistant. Generates, explains, and optimizes complex patterns.      | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-ai?label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-ai/tags) | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-ai?label=) |
 
-    *   **Windows:**
-        Download the latest OpenJDK
-        from [Microsoft's OpenJDK download page](https://learn.microsoft.com/en-us/java/openjdk/download).
-        Follow the installation instructions provided by Microsoft.
-        After installation, make sure the `java` and `javac` executables are in your system's `PATH` environment variable.
-    *   **Linux:**
-        You can use your distribution's package manager (e.g., `sudo apt install default-jdk` on Debian/Ubuntu) or follow the steps below for downloading directly:
+---
 
-        ```bash
-        # Download and install JDK (example: 23.0.1, adjust version as needed)
-        curl -fsSL https://download.java.net/java/GA/jdk-23.0.1/c28985cbf10d4e648e4004050f8781aa/11/GPL/openjdk-23.0.1_linux-x64_bin.tar.gz \
-        | sudo tar -xz -C /usr/local
-        sudo ln -s /usr/local/jdk-23.0.1 /usr/local/java # Adjust link name if needed
+## 🚀 Engine Matrix
 
-        # Set JAVA_HOME environment variable (add to ~/.bashrc or ~/.zshrc for persistence)
-        export JAVA_HOME=/usr/local/java
+| Worker Image    | Engine ID         | Algorithm      | Features & Use Case                                        | Version                                                                                                                                                           | Downloads                                                                           |
+|:----------------|:------------------|:---------------|:-----------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
+| `worker-python` | `python*_re`      | NFA            | Standard `re` module. Susceptible to ReDoS.                | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-python?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-python/tags) | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-python?label=) |
+| `worker-python` | `python*_regex`   | NFA (Advanced) | PyPI `regex` module. Variable lookbehinds, fuzzy matching. | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-python?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-python/tags) | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-python?label=) |
+| `worker-c-cpp`  | `cpp_re2`         | DFA            | Google RE2. Guaranteed $O(n)$ time, ReDoS-safe.            | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-c-cpp`  | `cpp_std`         | NFA            | Standard C++11 `std::regex`. ECMAScript default.           | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-c-cpp`  | `cpp_boost`       | NFA (Advanced) | Boost.Regex. PCRE syntax, recursive patterns.              | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-c-cpp`  | `cpp_hyperscan`   | DFA/Automata   | Intel Hyperscan. High-performance stream scanning.         | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-c-cpp`  | `c_pcre2`         | NFA/JIT        | PCRE2 library. Industry standard for Perl-compatibility.   | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-c-cpp`  | `c_onig`          | NFA            | Oniguruma. Used in VS Code, supports multi-encoding.       | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-c-cpp`  | `c_posix`         | NFA            | POSIX `regex.h`. Standard libc implementation (ERE).       | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-c-cpp?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-c-cpp/tags)   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-c-cpp?label=)  |
+| `worker-dotnet` | `dotnet_standard` | NFA (Advanced) | `System.Text.RegularExpressions`. Balancing groups.        | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-dotnet?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-dotnet/tags) | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-dotnet?label=) |
+| `worker-go`     | `go_standard`     | DFA            | Standard `regexp` package. ReDoS-safe, linear time.        | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-go?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-go/tags)         | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-go?label=)     |
+| `worker-jvm`    | `jvm_standard`    | NFA            | Standard `java.util.regex`. Backtracking engine.           | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-jvm?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-jvm/tags)       | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-jvm?label=)    |
+| `worker-jvm`    | `jvm_re2j`        | DFA            | Google's RE2J. Guaranteed $O(n)$ execution, ReDoS-safe.    | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-jvm?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-jvm/tags)       | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-jvm?label=)    |
+| `worker-rust`   | `rust_standard`   | DFA            | Rust `regex` crate. Linear time $O(n)$, ReDoS-safe.        | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-rust?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-rust/tags)     | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-rust?label=)   |
+| `worker-v8`     | `v8_standard`     | NFA            | Native Node.js RegExp. Supports modern `v` flag.           | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-v8?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-v8/tags)         | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-v8?label=)     |
+| `worker-php`    | `php_pcre`        | NFA            | PHP `preg_*` functions. PCRE2 based.                       | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-php?sort=date&label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-php/tags)       | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-php?label=)    |
 
-        # Add PATH to include Java binaries (add to ~/.bashrc or ~/.zshrc for persistence)
-        export PATH="$JAVA_HOME/bin:$PATH"
+---
 
-        # Verify installation
-        java -version
-        javac -version
-        ```
+## 📡 System Topology
 
-4.  **Install Node.js:**
+<div align="center">
+  <img src="docs/static/infographic.png" alt="OpenRegex Architecture" style="max-width: 100%; height: auto; margin-top: 15px;">
+</div>
 
-    Node.js is required to run the JavaScript regex engine.
+OpenRegex utilizes a microservices architecture managed via UV Workspaces:[cite: 1]
 
-    *   **Windows / macOS:**
-        Download the LTS (Long Term Support) installer from the [official Node.js website](https://nodejs.org/). Run the installer and follow the prompts. Ensure that Node.js and npm are added to your system's `PATH` during installation (this is usually the default option).
-    *   **Linux:**
-        Use your distribution's package manager. For example, on Debian/Ubuntu:
-        ```bash
-        sudo apt update
-        sudo apt install nodejs npm
-        ```
-        *(Note: This might install an older version. For the latest versions or specific version management, consider using NodeSource repositories or Node Version Manager (nvm).)*
+1. **OpenRegex Backend (FastAPI):** Central API hub routing traffic using "Smart Discovery"[cite: 1].
+2. **OpenRegex Frontend (React + Vite):** The visual inspector UI[cite: 1].
+3. **Redis Backbone:** Message broker handling task queues (`queue:{family}`) and result pub/sub channels (
+   `result:{task_id}`).
+4. **Worker Isolators:** Isolated worker nodes (Python, C++, Java, etc.) executing sub-processes for exact native regex
+   behaviors.
 
-    **Verify Installation:**
-    Open a *new* terminal window (to ensure PATH changes are loaded) and run:
-    ```bash
-    node -v
-    npm -v
-    ```
-    You should see the installed version numbers printed for Node.js and npm (Node Package Manager).
+---
 
-5.  **Install g++ (C++ Compiler):**
+## 🛠️ Installation & Deployment
 
-    You'll need a C++ compiler for the C++ regex engine.
+OpenRegex 2.0 is fully containerized. You no longer need to manually install compilers or runtimes on your host machine.
 
-    *   **Windows:**
-        1.  Install MSYS2 from [MSYS2 Download Page](https://www.msys2.org/).
-        2.  Open the MSYS2 terminal (UCRT64 environment) and run:
-            ```bash
-            pacman -Syu # Update package database and core packages first
-            pacman -S mingw-w64-ucrt-x86_64-gcc
-            ```
-        3.  Add the g++ binary directory to your system's PATH environment variable. Typically, this is `C:\msys64\ucrt64\bin`. You can do this via System Properties > Environment Variables, or temporarily in Command Prompt/PowerShell:
-            ```powershell
-            # PowerShell (temporary for current session)
-            $env:Path += ";C:\msys64\ucrt64\bin"
-            # Command Prompt (temporary for current session)
-            set PATH=%PATH%;C:\msys64\ucrt64\bin
-            # For persistent change via command line (requires admin):
-            setx PATH "%PATH%;C:\msys64\ucrt64\bin" /M
-            ```
-            Note: You might need to restart your terminal or computer for PATH changes to take effect, especially if using `setx`.
-    *   **Linux:**
-        Use your distribution's package manager. For example, on Debian/Ubuntu:
-        ```bash
-        sudo apt update
-        sudo apt install g++
-        ```
-        On Fedora/CentOS/RHEL:
-        ```bash
-        sudo dnf install gcc-c++ # Or yum for older versions
-        ```
+### Prerequisites
 
-    **Verify Installation:**
-    Open a terminal and run:
-    ```bash
-    g++ --version
-    ```
-    You should see the compiler version information.
+* Docker & Docker Compose
+* Git
 
-6.  **Run the Application:**
+### Quick Start
 
-    From the root directory of the project (where `app.py` is located), run:
-
-    ```bash
-    python app.py
-    ```
-
-    The application should start, and you should be able to access it in your web browser at `http://localhost:5000`.
-
-## Using Docker
-
-If you prefer using Docker, you can build and run the application in a container or pull the image from Docker Hub.
-
-**Building and Running the Docker Container:**
-
-1. **Build the Docker Image:**
-
-   Navigate to the directory containing your `Dockerfile` and run:
-
+1. **Clone the repository:**
    ```bash
-   docker build -t openregex .
+   git clone [https://github.com/sunnev/openregex.git](https://github.com/sunnev/openregex.git)
+   cd openregex
    ```
 
-2. **Run the Docker Container:**
-   Use the following command to start a container with environment variables and port mapping:
-
+2. **Set up the Environment File:**
    ```bash
-   docker run -e OPENREGEX_LOG_LEVEL=ERROR -e OPENREGEX_TIMEOUT_S=5 -e GUNICORN_WORKERS=1 -e GUNICORN_THREADS=4 -p 5000:5000 openregex
+   cp .env.example .env
    ```
-3. **Access the Application:**
 
-   Open your web browser and go to `http://localhost:5000` to access the application.
+3. **Start the Development Environment:**
 
-**Pull Docker Hub:**
-
-1. **Pull and run the Docker Image:**
-
-   You can also pull the image from Docker Hub:
-
+   **On Windows:**
+   ```cmd
+   .\deploy\run_deploy.bat
+   ```
+   **On Linux/macOS:**
    ```bash
-   docker run -e OPENREGEX_LOG_LEVEL=ERROR -e OPENREGEX_TIMEOUT_S=5 -e GUNICORN_WORKERS=1 -e GUNICORN_THREADS=4 -p 5000:5000 sunnev/openregex
+   docker-compose -f deploy/docker-compose.yml --env-file .env down -v
+   docker-compose -f deploy/docker-compose.yml --env-file .env up --build -d
    ```
-2. **Access the Application:**
 
-   Open your web browser and go to `http://localhost:5000` to access the application.
+4. **Access the Application:**
+   Open your browser and navigate to `http://localhost:5000`. The FastAPI backend will be available at
+   `http://localhost:8000`.
 
-## Notes
+---
 
-This application is developed in a private repository and mirrored to a public repository.
+## 🐳 Self-Hosting with Docker Compose
 
-## Support
+OpenRegex is designed to be easily self-hosted. Using Docker Compose, you can spin up the entire ecosystem—including the
+orchestration backend, the visual frontend, and the polyglot worker nodes—with a single command.
+
+Save the following configuration as `docker-compose.yml` and run `docker-compose up -d` to deploy.
+
+```yaml
+version: "3.8"
+
+services:
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  backend:
+    image: sunnev/openregex-backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  frontend:
+    image: sunnev/openregex-frontend:latest
+    ports:
+      - "5000:5000"
+    restart: always
+    depends_on:
+      - backend
+
+  # --- OPTIONAL AI WORKER ---
+  # Uncomment the lines below to enable LLM-powered regex assistance.
+  # 🛡️ SECURITY RECOMMENDATION: For production, we strongly advise pointing LLM_ENDPOINT 
+  # to a proxy server (like LiteLLM) to safely manage and isolate your API keys.
+  # worker-ai:
+  #   image: sunnev/openregex-worker-ai:latest
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379
+  #     - LLM_ENDPOINT=${LLM_ENDPOINT:-}
+  #     - LLM_MODEL=${LLM_MODEL:-}
+  #     - LLM_API_KEY=${LLM_API_KEY:-}
+  #     - LLM_SSL_VERIFY=${LLM_SSL_VERIFY:-true}
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   restart: always
+
+  worker-python:
+    image: sunnev/openregex-worker-python:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-c-cpp:
+    image: sunnev/openregex-worker-c-cpp:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-v8:
+    image: sunnev/openregex-worker-v8:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-jvm:
+    image: sunnev/openregex-worker-jvm:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-rust:
+    image: sunnev/openregex-worker-rust:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-dotnet:
+    image: sunnev/openregex-worker-dotnet:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-php:
+    image: sunnev/openregex-worker-php:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+```
+
+---
+
+## 📁 Monorepo Structure (UV Workspaces)
+
+```text
+OpenRegex/
+├── apps/
+│   ├── openregex-backend/      # OpenRegex FastAPI Gateway
+│   └── openregex-frontend/     # OpenRegex React UI
+├── docs/                       # Internal System Architecture Guidelines
+│   ├── FrontendArchitecture.md # UI Boundaries & State Management Rules
+│   └── WorkerNodeArchitecture.md # SLA, Claims-Check, & Queue Constraints
+├── libs/
+│   └── python-shared/          # Shared Pydantic models
+├── workers/
+│   ├── worker-ai/              # Optional AI Assistant for Regex Operations
+│   ├── worker-python/          # re, regex (NFA)
+│   ├── worker-c-cpp/           # RE2 (DFA), PCRE2, Oniguruma, POSIX, Hyperscan
+│   └── worker-*/               # Other isolated runtimes
+└── deploy/
+│     └── docker-compose.yml      # Orchestration of the engine fleet for deployment
+└── docker-compose.yml      # Example docker compose ready to use images from docker hub
+```
+
+---
+
+## ❤️ Support
 
 You like my work? Just sponsor me!
 
-☕ [![GitHub sponsors](https://img.shields.io/github/sponsors/sunnev)]()☕
+☕ [![GitHub sponsors](https://img.shields.io/github/sponsors/sunnev)]() ☕

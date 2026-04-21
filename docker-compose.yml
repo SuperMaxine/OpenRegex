@@ -1,0 +1,108 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  backend:
+    image: sunnev/openregex-backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  frontend:
+    image: sunnev/openregex-frontend:latest
+    ports:
+      - "5000:5000"
+    restart: always
+    depends_on:
+      - backend
+
+  # --- OPTIONAL AI WORKER ---
+  # Uncomment the lines below to enable LLM-powered regex assistance
+  # worker-ai:
+  #   image: sunnev/openregex-worker-ai:latest
+  #   environment:
+  #     - REDIS_URL=redis://redis:6379
+  #     - LLM_ENDPOINT=${LLM_ENDPOINT:-}
+  #     - LLM_MODEL=${LLM_MODEL:-}
+  #     - LLM_API_KEY=${LLM_API_KEY:-}
+  #     - LLM_SSL_VERIFY=${LLM_SSL_VERIFY:-true}
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   restart: always
+
+  worker-python:
+    image: sunnev/openregex-worker-python:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-c-cpp:
+    image: sunnev/openregex-worker-c-cpp:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-v8:
+    image: sunnev/openregex-worker-v8:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-jvm:
+    image: sunnev/openregex-worker-jvm:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-rust:
+    image: sunnev/openregex-worker-rust:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-dotnet:
+    image: sunnev/openregex-worker-dotnet:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+
+  worker-php:
+    image: sunnev/openregex-worker-php:latest
+    environment:
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always

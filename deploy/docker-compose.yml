@@ -1,0 +1,115 @@
+# PRODUCTION ARCHITECTURE
+# Fully immutable containers, no source mounts, restarting policies enabled.
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/openregex-backend.dockerfile
+      target: production
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    restart: always
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/openregex-frontend.dockerfile
+      target: production
+    ports:
+      - "5000:5000"
+    restart: always
+
+  worker-ai:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-ai.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+    environment:
+      - LLM_ENDPOINT=${LLM_ENDPOINT:-}
+      - LLM_MODEL=${LLM_MODEL:-}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_SSL_VERIFY=${LLM_SSL_VERIFY:-true}
+
+  worker-python:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-python.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-c-cpp:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-c-cpp.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-v8:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-v8.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-jvm:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-jvm.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-dotnet:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-dotnet.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-rust:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-rust.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-go:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-go.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
+
+  worker-php:
+    build:
+      context: ..
+      dockerfile: deploy/dockerfiles/worker-php.dockerfile
+      target: production
+    depends_on:
+      - redis
+    restart: always
