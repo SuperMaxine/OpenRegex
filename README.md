@@ -21,13 +21,15 @@ target production environment, eliminating the discrepancies between native rege
 ## 🌟 Key Features
 
 * **Polyglot Micro-Workers:** Native engine execution via completely isolated Docker containers.
-* **Pattern Inspector:** Advanced React + Vite frontend for dynamic visual match inspection and group highlighting[cite: 1].
-* **AI-Powered Assistant (`worker-ai`):** An optional, independent worker using separate queues[cite: 1] designed specifically for regex.
+* **Pattern Inspector:** Advanced React + Vite frontend for dynamic visual match inspection and group highlighting.
+* **AI-Powered Assistant (`worker-ai`):** An optional, independent worker using separate queues designed specifically
+  for regex.
   It automatically generates complex patterns from natural language prompts, explains obscure syntax, and optimizes
   inefficient queries. **🛡️ Security Note:** For production deployments, it is highly recommended to route requests
   through an LLM proxy server (like **LiteLLM**) to safely manage and isolate your API keys rather than exposing them
   directly to the worker environment.
-* **Zero-Trust Guardrails:** 1000ms SLA (engine-dependent overrides possible)[cite: 1], strict memory limits (e.g., 8MB heap limits for binary
+* **Zero-Trust Guardrails:** 1000ms SLA (engine-dependent overrides possible), strict memory limits (e.g., 8MB heap
+  limits for binary
   engines), and multiprocessing isolation to prevent ReDoS attacks.
 * **Living Docs System:** Dynamic knowledge base featuring context-aware cheat sheets and engine-specific trivia (
   Factograph).
@@ -51,30 +53,30 @@ All worker nodes must interface with a Redis-backed queue system and adhere to s
 * **Claim-Check Pattern:** To bypass message broker memory limits, workers intercept large subject texts stored
   temporarily in Redis using a `text_payload_id`.
 * **ReDoS Guardrails:** Every regex execution must be strictly bounded by a 1000ms SLA; if an engine hangs, it
-  is safely terminated[cite: 1].
+  is safely terminated.
 * **Data Contracts:** Communication relies on strict JSON payloads over Redis, utilizing `MatchRequest` inbound tasks
   and `MatchResult` outbound tasks over Pub/Sub.
 
 ### Frontend Architecture (`docs/FrontendArchitecture.md`)
 
-The React + Vite frontend uses a domain-driven, feature-based architecture to maintain a clean codebase[cite: 1].
+The React + Vite frontend uses a domain-driven, feature-based architecture to maintain a clean codebase.
 
 * **The Dependency Rule:** The `features/` directory must never import from other `features/`, ensuring isolated
-  modules[cite: 1]. Both `core/` and `shared/` directories can only import from themselves or external packages.
+  modules. Both `core/` and `shared/` directories can only import from themselves or external packages.
 * **State Management:** Business logic and global state are never passed as props. Shared state belongs in `core/store/`
-  using Zustand with atomic selectors[cite: 1], while local UI state uses standard React `useState`.
+  using Zustand with atomic selectors, while local UI state uses standard React `useState`.
 * **Feature Encapsulation:** All components, hooks, types, and utilities specific to a feature are kept inside its
-  respective folder and exposed only through a top-level `index.ts` file[cite: 1].
+  respective folder and exposed only through a top-level `index.ts` file.
 
 ---
 
 ## ⚙️ Core Infrastructure
 
-| Component                | Role                 | Tech Stack                                                                             | Version                                                                                                                                         | Downloads                                                                       |
-|:-------------------------|:---------------------|:---------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------|
-| **Frontend**             | `openregex-frontend` | React + Vite UI. Handles visualization, and worker health monitoring.                  | [![Version](https://img.shields.io/docker/v/sunnev/openregex-frontend?label=latest)]([https://hub.docker.com/r/sunnev/openregex-frontend/tags](https://hub.docker.com/r/sunnev/openregex-frontend/tags))   | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-frontend?label=)  |
-| **Backend**              | `openregex-backend`  | API Orchestrator. Manages Redis job queues, worker discovery, and security guardrails. | [![Version](https://img.shields.io/docker/v/sunnev/openregex-backend?label=latest)](https://hub.docker.com/r/sunnev/openregex-backend/tags)     | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-backend?label=)   |
-| **AI Worker** (Optional) | `worker-ai`          | LLM-powered Regex assistant. Generates, explains, and optimizes complex patterns.      | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-ai?label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-ai/tags) | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-ai?label=) |
+| Component                | Role                 | Tech Stack                                                                             | Version                                                                                                                                                                                                  | Downloads                                                                       |
+|:-------------------------|:---------------------|:---------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------|
+| **Frontend**             | `openregex-frontend` | React + Vite UI. Handles visualization, and worker health monitoring.                  | [![Version](https://img.shields.io/docker/v/sunnev/openregex-frontend?label=latest)]([https://hub.docker.com/r/sunnev/openregex-frontend/tags](https://hub.docker.com/r/sunnev/openregex-frontend/tags)) | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-frontend?label=)  |
+| **Backend**              | `openregex-backend`  | API Orchestrator. Manages Redis job queues, worker discovery, and security guardrails. | [![Version](https://img.shields.io/docker/v/sunnev/openregex-backend?label=latest)](https://hub.docker.com/r/sunnev/openregex-backend/tags)                                                              | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-backend?label=)   |
+| **AI Worker** (Optional) | `worker-ai`          | LLM-powered Regex assistant. Generates, explains, and optimizes complex patterns.      | [![Version](https://img.shields.io/docker/v/sunnev/openregex-worker-ai?label=latest)](https://hub.docker.com/r/sunnev/openregex-worker-ai/tags)                                                          | ![Pulls](https://img.shields.io/docker/pulls/sunnev/openregex-worker-ai?label=) |
 
 ---
 
@@ -107,10 +109,10 @@ The React + Vite frontend uses a domain-driven, feature-based architecture to ma
   <img src="docs/static/infographic.png" alt="OpenRegex Architecture" style="max-width: 100%; height: auto; margin-top: 15px;">
 </div>
 
-OpenRegex utilizes a microservices architecture managed via UV Workspaces:[cite: 1]
+OpenRegex utilizes a microservices architecture managed via UV Workspaces:
 
-1. **OpenRegex Backend (FastAPI):** Central API hub routing traffic using "Smart Discovery"[cite: 1].
-2. **OpenRegex Frontend (React + Vite):** The visual inspector UI[cite: 1].
+1. **OpenRegex Backend (FastAPI):** Central API hub routing traffic using "Smart Discovery".
+2. **OpenRegex Frontend (React + Vite):** The visual inspector UI.
 3. **Redis Backbone:** Message broker handling task queues (`queue:{family}`) and result pub/sub channels (
    `result:{task_id}`).
 4. **Worker Isolators:** Isolated worker nodes (Python, C++, Java, etc.) executing sub-processes for exact native regex
@@ -157,6 +159,32 @@ OpenRegex 2.0 is fully containerized. You no longer need to manually install com
    `http://localhost:8000`.
 
 ---
+That is a great idea. A table is much easier for developers to scan when configuring their deployment.
+
+Here is the revised section using a formatted table:
+
+### 📝 Environment Configuration (`.env`)
+
+To customize your OpenRegex deployment, you can configure various parameters in your `.env` file. Below is a breakdown
+of the available settings to manage SEO, rate limits, AI worker parameters, and strict execution boundaries:
+
+| Environment Variable              | Default Value                 | Explanation                                                                                                    |
+|:----------------------------------|:------------------------------|:---------------------------------------------------------------------------------------------------------------|
+| **`ROBOTS_META`**                 | `"noindex, nofollow"`         | Controls search engine indexing for production environments. Set to `"index, follow"` to make the site public. |
+| **`RATE_LIMIT_REQUESTS`**         | `60`                          | The maximum number of requests allowed per engine per minute to prevent abuse.                                 |
+| **`RATE_LIMIT_WINDOW`**           | `60`                          | The time window (in seconds) for the rate-limiting threshold.                                                  |
+| **`API_AI_ENDPOINT_ENABLE`**      | `"false"`                     | Toggles the availability of the AI assistant endpoint (`worker-ai`).                                           |
+| **`API_REGEX_ENDPOINT_ENABLE`**   | `"true"`                      | Toggles the core regex evaluation endpoint.                                                                    |
+| **`AI_MAX_WORKERS`**              | `"2"`                         | The maximum number of concurrent AI worker processes.                                                          |
+| **`LLM_ENDPOINT`**                | `"https://api.openai.com/v1"` | The base URL for the LLM service. Can be pointed to a proxy like LiteLLM.                                      |
+| **`LLM_MODEL`**                   | `"gpt-4o"`                    | The specific LLM model used for generating, explaining, and optimizing patterns.                               |
+| **`LLM_API_KEY`**                 | `"sk-..."`                    | Your secret API key for the chosen LLM provider.                                                               |
+| **`LLM_SSL_VERIFY`**              | `"true"`                      | Determines whether SSL certificates should be verified when communicating with the LLM endpoint.               |
+| **`WORKER_EXECUTION_TIMEOUT_MS`** | `1000`                        | The strict execution SLA (in milliseconds) applied across all regex workers to prevent ReDoS attacks.          |
+| **`WORKER_MAX_INPUT_SIZE`**       | `10485760`                    | The maximum allowed length (10MB) for the subject text being tested.                                           |
+| **`WORKER_MAX_MATCHES`**          | `10000`                       | The upper limit on the number of individual matches returned by the engine.                                    |
+| **`WORKER_MAX_GROUPS`**           | `1000`                        | The maximum number of capture groups processed per request.                                                    |
+| **`WORKER_MAX_JSON_SIZE`**        | `10485760`                    | The maximum allowed size (10MB) for JSON payloads communicated over the Redis backbone.                        |
 
 ## 🐳 Self-Hosting with Docker Compose
 
