@@ -1,0 +1,1 @@
+export const SHARED_TEXT_CLASSES = "font-mono text-sm leading-snug p-3 m-0 border-none outline-none whitespace-pre-wrap break-all box-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [font-variant-ligatures:none]";

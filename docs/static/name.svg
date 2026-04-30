@@ -1,0 +1,22 @@
+<svg viewBox="0 0 515 80" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .text {
+      font-family: "Consolas, Menlo, Monaco, monospace", sans-serif;
+      font-weight: bold;
+      font-size: 64px;
+      stroke: black;
+      stroke-width: 5px;
+      fill-opacity: 1;
+      paint-order: stroke fill;
+      /* Forces text to grow outward from the center */
+      text-anchor: middle;
+    }
+    .open { fill: #BC0000; }
+    .regex { fill: #F0F0F0; }
+    .com { fill: #888888; }
+  </style>
+
+  <text x="50%" y="60" class="text">
+    <tspan class="open">Open</tspan><tspan class="regex">Regex</tspan><tspan class="com">.com</tspan>
+  </text>
+</svg>

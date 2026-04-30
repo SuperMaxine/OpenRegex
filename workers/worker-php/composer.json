@@ -1,0 +1,13 @@
+{
+    "name": "openregex/worker-php",
+    "description": "PHP PCRE engine worker for OpenRegex",
+    "type": "project",
+    "require": {
+        "predis/predis": "^2.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "OpenRegex\\Worker\\": "src/"
+        }
+    }
+}
