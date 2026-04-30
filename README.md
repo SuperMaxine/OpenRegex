@@ -159,9 +159,6 @@ OpenRegex 2.0 is fully containerized. You no longer need to manually install com
    `http://localhost:8000`.
 
 ---
-That is a great idea. A table is much easier for developers to scan when configuring their deployment.
-
-Here is the revised section using a formatted table:
 
 ### 📝 Environment Configuration (`.env`)
 
