@@ -13,7 +13,7 @@ runtimes (Runtime-as-a-Service). It provides developers with a tool that guarant
 target production environment, eliminating the discrepancies between native regex dialects.
 
 <div align="center">
-  <img src="docs/static/screenshot.png" alt="OpenRegex Architecture" style="max-width: 100%; height: auto; margin-top: 15px;">
+  <img src="docs/static/screenshots/app-screenshot.png" alt="OpenRegex Architecture" style="max-width: 100%; height: auto; margin-top: 15px;">
 </div>
 
 ---
@@ -34,6 +34,44 @@ target production environment, eliminating the discrepancies between native rege
 * **Living Docs System:** Dynamic knowledge base featuring context-aware cheat sheets and engine-specific trivia (
   Factograph).
 * **Smart Discovery:** Automatic heartbeat registration of worker node capabilities via Redis.
+
+---
+
+## 🖼️ Feature Showcase
+
+### Multi Regex Engine Selection
+Run patterns across multiple engines and compare results instantly.
+
+<img src="docs/static/screenshots/engine-selection.png" alt="Multi Regex Engine Selection" width="800">
+
+---
+
+### Cross-Engine Compatibility Report
+Detect inconsistencies and portability issues between engines.
+
+<img src="docs/static/screenshots/compatibility-report-1.png" alt="Compatibility Report 1" width="800">
+<br>
+<img src="docs/static/screenshots/compatibility-report-2.png" alt="Compatibility Report 2" width="800">
+---
+
+### Personal Storage
+Store and manage regex patterns locally in your browser.
+
+<img src="docs/static/screenshots/personal-storage.png" alt="Personal Storage" width="800">
+
+---
+
+### Advanced Hint System
+Hover tokens to get instant explanations.
+
+<img src="docs/static/screenshots/hint-system.png" alt="Hint System" width="800">
+
+---
+
+### AI Optimization
+Generate, explain, and optimize regex patterns.
+
+<img src="docs/static/screenshots/ai-optimization.png" alt="AI Optimization" width="800">
 
 ---
 
@@ -332,5 +370,4 @@ OpenRegex/
 ## ❤️ Support
 
 You like my work? Just sponsor me!
-
 ☕ [![GitHub sponsors](https://img.shields.io/github/sponsors/sunnev)]() ☕
