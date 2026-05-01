@@ -25,7 +25,8 @@ class Processor {
 
         while (true) {
             try {
-                $result = $client->brpop(['queue:php'], 0);
+                // Use a non-zero timeout to prevent silent TCP connection drops
+                $result = $client->brpop(['queue:php'], 5);
                 if (!$result) continue;
 
                 $taskJson = $result[1];
@@ -174,6 +175,14 @@ class Processor {
 
             } catch (\Exception $e) {
                 echo "[Error] PHP Worker loop failure: " . $e->getMessage() . "\n";
+                // Disconnect to force Predis to re-establish the socket on the next iteration
+                try {
+                    $client->disconnect();
+                } catch (\Exception $ex) {
+                    // Ignore disconnect errors
+                }
+                // Sleep to avoid a rapid spin-loop if the Redis server is completely down
+                sleep(2);
             }
         }
     }

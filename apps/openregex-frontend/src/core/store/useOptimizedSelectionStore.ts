@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { SelectionSource } from './useSelectionStore';
 
 interface SelectionState {
   activeMatchIds: number[];
@@ -11,7 +12,8 @@ interface SelectionState {
   hoveredInstanceId: string | null;
   hoveredToken: string | null;
   hoveredTokenIndex: number | null;
-  handleSelection: (matchId: number | null, groupId: number | null, instanceId: string | null, multi?: boolean, token?: string | null, tokenIndex?: number | null) => void;
+  selectionSource: SelectionSource;
+  handleSelection: (matchId: number | null, groupId: number | null, instanceId: string | null, multi?: boolean, token?: string | null, tokenIndex?: number | null, source?: SelectionSource) => void;
   handleHover: (matchId: number | null, groupId: number | null, instanceId: string | null, token?: string | null, tokenIndex?: number | null) => void;
   handleClearSelection: () => void;
 }
@@ -27,8 +29,9 @@ export const useOptimizedSelectionStore = create<SelectionState>((set) => ({
   hoveredInstanceId: null,
   hoveredToken: null,
   hoveredTokenIndex: null,
+  selectionSource: null,
 
-  handleSelection: (matchId, groupId, instanceId, multi = false, token = null, tokenIndex = null) => set((state) => {
+  handleSelection: (matchId, groupId, instanceId, multi = false, token = null, tokenIndex = null, source = null) => set((state) => {
     if (!multi) {
       const isSameToken = matchId === null && groupId === null && instanceId === null && token !== null && state.activeToken === token && state.activeTokenIndex === tokenIndex;
 
@@ -38,6 +41,7 @@ export const useOptimizedSelectionStore = create<SelectionState>((set) => ({
         activeInstanceIds: instanceId !== null ? [instanceId] : [],
         activeToken: isSameToken ? null : token,
         activeTokenIndex: isSameToken ? null : tokenIndex,
+        selectionSource: source
       };
     }
 
@@ -57,6 +61,7 @@ export const useOptimizedSelectionStore = create<SelectionState>((set) => ({
       activeTokenIndex: tokenIndex !== null
         ? (state.activeTokenIndex === tokenIndex && state.activeToken === token ? null : tokenIndex)
         : state.activeTokenIndex,
+      selectionSource: source
     };
   }),
 
@@ -73,7 +78,8 @@ export const useOptimizedSelectionStore = create<SelectionState>((set) => ({
     activeGroupIds: [],
     activeInstanceIds: [],
     activeToken: null,
-    activeTokenIndex: null
+    activeTokenIndex: null,
+    selectionSource: null
   })
 }));
 

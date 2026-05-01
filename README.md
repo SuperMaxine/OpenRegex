@@ -367,6 +367,28 @@ OpenRegex/
 
 ---
 
+## 📜 Changelogs
+
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each component has its own changelog.
+
+*   **Core:**
+    *   [`openregex-frontend`](./apps/openregex-frontend/CHANGELOG.md)
+    *   [`openregex-backend`](./apps/openregex-backend/CHANGELOG.md)
+*   **Libraries:**
+    *   [`python-shared`](./libs/python-shared/CHANGELOG.md)
+*   **Workers:**
+    *   [`worker-ai`](./workers/worker-ai/CHANGELOG.md)
+    *   [`worker-python`](./workers/worker-python/CHANGELOG.md)
+    *   [`worker-c-cpp`](./workers/worker-c-cpp/CHANGELOG.md)
+    *   [`worker-dotnet`](./workers/worker-dotnet/CHANGELOG.md)
+    *   [`worker-go`](./workers/worker-go/CHANGELOG.md)
+    *   [`worker-jvm`](./workers/worker-jvm/CHANGELOG.md)
+    *   [`worker-rust`](./workers/worker-rust/CHANGELOG.md)
+    *   [`worker-v8`](./workers/worker-v8/CHANGELOG.md)
+    *   [`worker-php`](./workers/worker-php/CHANGELOG.md)
+
+---
+
 ## ❤️ Support
 
 You like my work? Just sponsor me!

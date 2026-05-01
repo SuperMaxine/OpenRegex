@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
-import { MatchGroup } from '../../../core/types';
+import React, { useRef, useEffect, useMemo, useState, memo } from 'react';
+import { Map } from 'lucide-react';
+import { MatchItem } from '../../../core/types';
 import { getGroupColorClasses } from '../../../shared/utils/colors';
 import { useRegexStore } from '../../../core/store/useRegexStore';
 import { useSelectionStore } from '../../../core/store/useSelectionStore';
@@ -16,7 +17,11 @@ const renderTextWithTooltips = (textContent: string) => {
         const chars = hexes.map(h => parseInt(h, 16));
         const charStr = String.fromCharCode(...chars);
         return (
-          <span key={idx} title={charStr} className="cursor-help border-b border-dotted border-theme-muted hover:bg-theme-border transition-colors">
+          <span
+            key={idx}
+            title={charStr}
+            className="cursor-help border-b border-dotted border-theme-muted hover:bg-theme-border transition-colors"
+          >
             {part}
           </span>
         );
@@ -28,98 +33,65 @@ const renderTextWithTooltips = (textContent: string) => {
   });
 };
 
-const getInstanceId = (matchId: number, group: MatchGroup) => `m${matchId}-g${group.group_id}-${group.start}`;
+interface SpanMarker {
+  type: 'match' | 'group';
+  start: number;
+  end: number;
+  matchId: number;
+  groupId?: number;
+  instanceId?: string;
+}
 
-const getNestedChildren = (group: MatchGroup): MatchGroup[] => {
-  const groupWithChildren = group as MatchGroup & { children?: MatchGroup[] };
-  return Array.isArray(groupWithChildren.children) ? groupWithChildren.children : [];
-};
+interface Segment {
+  start: number;
+  end: number;
+  textSlice: string;
+  markers: SpanMarker[];
+}
 
-const isGroupActive = (
-  group: MatchGroup,
-  matchId: number,
-  activeGroupIds: number[],
-  activeInstanceIds: string[]
-) => {
-  const instanceId = getInstanceId(matchId, group);
-  return activeInstanceIds.length > 0 ? activeInstanceIds.includes(instanceId) : activeGroupIds.includes(group.group_id);
-};
+const buildSegments = (text: string, matches: MatchItem[]): Segment[] => {
+  const boundaries = new Set<number>([0, text.length]);
+  const markers: SpanMarker[] = [];
 
-const isGroupHovered = (
-  group: MatchGroup,
-  matchId: number,
-  hoveredGroupId: number | null,
-  hoveredInstanceId: string | null
-) => {
-  const instanceId = getInstanceId(matchId, group);
-  return hoveredInstanceId ? hoveredInstanceId === instanceId : hoveredGroupId === group.group_id;
-};
+  matches.forEach(m => {
+    boundaries.add(m.start);
+    boundaries.add(m.end);
+    markers.push({ type: 'match', start: m.start, end: m.end, matchId: m.match_id });
 
-const hasDescendantState = (
-  children: MatchGroup[],
-  predicate: (group: MatchGroup) => boolean
-): boolean => {
-  return children.some(child => predicate(child) || hasDescendantState(getNestedChildren(child), predicate));
-};
-
-const getGroupLayerClass = (
-  isHovered: boolean,
-  hasHoveredDescendant: boolean,
-  isEffectivelyActive: boolean,
-  hasActiveDescendant: boolean,
-  isDimmed: boolean
-) => {
-  if (isHovered) return '!z-50';
-  if (hasHoveredDescendant) return '!z-40';
-  if (isEffectivelyActive) return 'z-40';
-  if (hasActiveDescendant) return 'z-30';
-  if (isDimmed) return 'z-0';
-  return 'z-10 hover:z-20';
-};
-
-const MatchNode = ({
-  text, start, end, groups, matchId, activeGroupIds, activeInstanceIds, hasAnySelection, hoveredGroupId, hoveredInstanceId
-}: {
-  text: string, start: number, end: number, groups: MatchGroup[], matchId: number, activeGroupIds: number[], activeInstanceIds: string[], hasAnySelection: boolean, hoveredGroupId: number | null, hoveredInstanceId: string | null
-}) => {
-  if (groups.length === 0) return <span>{renderTextWithTooltips(text.slice(start, end))}</span>;
-
-  const topLevel: (MatchGroup & { children: MatchGroup[] })[] = [];
-  let currentGroups = [...groups].sort((a, b) => a.start - b.start || b.end - a.end);
-
-  while (currentGroups.length > 0) {
-    const g = currentGroups.shift()!;
-    const children = currentGroups.filter(c => c.start >= g.start && c.end <= g.end);
-    currentGroups = currentGroups.filter(c => !(c.start >= g.start && c.end <= g.end));
-    topLevel.push({ ...g, children });
-  }
-
-  let lastIdx = start;
-  const elements = [];
-
-  topLevel.forEach((g, i) => {
-    if (g.start > lastIdx) elements.push(<span key={`text-${i}`}>{renderTextWithTooltips(text.slice(lastIdx, g.start))}</span>);
-
-    const instanceId = getInstanceId(matchId, g);
-    const isEffectivelyActive = isGroupActive(g, matchId, activeGroupIds, activeInstanceIds);
-    const isHovered = isGroupHovered(g, matchId, hoveredGroupId, hoveredInstanceId);
-    const hasActiveDescendant = hasDescendantState(g.children, child => isGroupActive(child, matchId, activeGroupIds, activeInstanceIds));
-    const hasHoveredDescendant = hasDescendantState(g.children, child => isGroupHovered(child, matchId, hoveredGroupId, hoveredInstanceId));
-
-    const isDimmed = hasAnySelection && !isEffectivelyActive && !hasActiveDescendant && !isHovered && !hasHoveredDescendant;
-    const classes = getGroupColorClasses(g.group_id, isEffectivelyActive || isHovered, isDimmed);
-    const layerClass = getGroupLayerClass(isHovered, hasHoveredDescendant, isEffectivelyActive, hasActiveDescendant, isDimmed);
-
-    elements.push(
-      <span key={`group-${g.group_id}-${g.start}`} data-match-id={matchId} data-group-id={g.group_id} data-instance-id={instanceId} className={`relative transition-all duration-300 rounded-sm cursor-pointer ${layerClass} ${classes}`}>
-        <MatchNode text={text} start={g.start} end={g.end} groups={g.children} matchId={matchId} activeGroupIds={activeGroupIds} activeInstanceIds={activeInstanceIds} hasAnySelection={hasAnySelection} hoveredGroupId={hoveredGroupId} hoveredInstanceId={hoveredInstanceId} />
-      </span>
-    );
-    lastIdx = g.end;
+    m.groups.forEach(g => {
+      boundaries.add(g.start);
+      boundaries.add(g.end);
+      markers.push({
+        type: 'group',
+        start: g.start,
+        end: g.end,
+        matchId: m.match_id,
+        groupId: g.group_id,
+        instanceId: `m${m.match_id}-g${g.group_id}-${g.start}`,
+      });
+    });
   });
 
-  if (lastIdx < end) elements.push(<span key={`text-end`}>{renderTextWithTooltips(text.slice(lastIdx, end))}</span>);
-  return <>{elements}</>;
+  const sortedBoundaries = Array.from(boundaries).sort((a, b) => a - b);
+  const segments: Segment[] = [];
+
+  for (let i = 0; i < sortedBoundaries.length - 1; i++) {
+    const start = sortedBoundaries[i];
+    const end = sortedBoundaries[i + 1];
+    if (start === end) continue;
+
+    const coveringMarkers = markers.filter(m => m.start <= start && m.end >= end);
+    coveringMarkers.sort((a, b) => (a.end - a.start) - (b.end - b.start));
+
+    segments.push({
+      start,
+      end,
+      textSlice: text.slice(start, end),
+      markers: coveringMarkers
+    });
+  }
+
+  return segments;
 };
 
 const matchColor = {
@@ -127,22 +99,166 @@ const matchColor = {
   active: 'bg-emerald-500/40 ring-2 ring-inset ring-emerald-500 text-emerald-950 dark:bg-[#34D399]/30 dark:ring-[#34D399]/60 dark:text-[#FFFFFF] dark:shadow-[0_0_8px_rgba(52,211,153,0.4)] z-10 relative box-decoration-clone'
 };
 
+const Chunk = memo(({ segments, selectionState, rootRef }: { segments: Segment[], selectionState: any, rootRef: React.RefObject<HTMLDivElement> }) => {
+  const [isVisible, setIsVisible] = useState(true);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsVisible(entry.isIntersecting);
+    }, { root: rootRef.current, rootMargin: '600px' });
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [rootRef]);
+
+  if (!isVisible) {
+    return <span ref={ref}>{segments.map(s => s.textSlice).join('')}</span>;
+  }
+
+  const { activeMatchSet, activeGroupSet, activeInstanceSet, hoveredMatchId, hoveredGroupId, hoveredInstanceId, hasAnySelection } = selectionState;
+
+  return (
+    <span ref={ref}>
+      {segments.map((seg, i) => {
+        if (seg.markers.length === 0) {
+          return <span key={i}>{renderTextWithTooltips(seg.textSlice)}</span>;
+        }
+
+        const topHoveredMarker = seg.markers.find(m =>
+          m.type === 'group'
+            ? (hoveredInstanceId ? hoveredInstanceId === m.instanceId : hoveredGroupId === m.groupId)
+            : (hoveredMatchId === m.matchId && hoveredGroupId === null)
+        );
+
+        const topActiveMarker = seg.markers.find(m =>
+          m.type === 'group'
+            ? (activeInstanceSet.size > 0 ? activeInstanceSet.has(m.instanceId!) : activeGroupSet.has(m.groupId!))
+            : activeMatchSet.has(m.matchId)
+        );
+
+        const topMarker = topHoveredMarker || topActiveMarker || seg.markers[0];
+        const isActive = !!topActiveMarker;
+        const isHover = !!topHoveredMarker;
+        const isDimmed = hasAnySelection && !isActive && !isHover;
+
+        let colorClasses = '';
+        let layerClass = isHover ? '!z-50' : (isActive ? 'z-40' : (isDimmed ? 'z-0' : 'z-10 hover:z-20'));
+
+        if (topMarker.type === 'match') {
+          colorClasses = (isActive || isHover) ? matchColor.active : matchColor.base;
+          if (isDimmed) colorClasses += ' opacity-35 saturate-[0.7]';
+        } else {
+          colorClasses = getGroupColorClasses(topMarker.groupId!, isActive || isHover, isDimmed);
+        }
+
+        return (
+          <span
+            key={i}
+            data-match-id={topMarker.matchId}
+            data-group-id={topMarker.groupId}
+            data-instance-id={topMarker.instanceId}
+            className={`relative rounded-sm transition-colors duration-150 cursor-pointer ${colorClasses} ${layerClass}`}
+          >
+            {renderTextWithTooltips(seg.textSlice)}
+          </span>
+        );
+      })}
+    </span>
+  );
+});
+
 export const SubjectEditor: React.FC = () => {
   const text = useRegexStore(state => state.text);
   const setText = useRegexStore(state => state.setText);
   const matches = useRegexStore(state => state.matches);
   const optimizedMatches = useRegexStore(state => state.optimizedMatches);
-
-  const originalSelection = useSelectionStore();
-  const optimizedSelection = useOptimizedSelectionStore();
-
   const optimizationProposal = useLLMStore(state => state.optimizationProposal);
+
+  const [isMinimapOpen, setIsMinimapOpen] = useState(false);
+
+  const activeMatchIds = useSelectionStore(s => s.activeMatchIds);
+  const activeGroupIds = useSelectionStore(s => s.activeGroupIds);
+  const activeInstanceIds = useSelectionStore(s => s.activeInstanceIds);
+  const hoveredMatchId = useSelectionStore(s => s.hoveredMatchId);
+  const hoveredGroupId = useSelectionStore(s => s.hoveredGroupId);
+  const hoveredInstanceId = useSelectionStore(s => s.hoveredInstanceId);
+  const handleSelection = useSelectionStore(s => s.handleSelection);
+  const handleHover = useSelectionStore(s => s.handleHover);
+
+  const activeMatchSet = useMemo(() => new Set(activeMatchIds), [activeMatchIds]);
+  const activeGroupSet = useMemo(() => new Set(activeGroupIds), [activeGroupIds]);
+  const activeInstanceSet = useMemo(() => new Set(activeInstanceIds), [activeInstanceIds]);
+  const hasAnySelection = activeMatchSet.size > 0 || activeGroupSet.size > 0 || activeInstanceSet.size > 0;
+
+  const selectionState = useMemo(() => ({
+    activeMatchSet, activeGroupSet, activeInstanceSet,
+    hoveredMatchId, hoveredGroupId, hoveredInstanceId, hasAnySelection
+  }), [activeMatchSet, activeGroupSet, activeInstanceSet, hoveredMatchId, hoveredGroupId, hoveredInstanceId, hasAnySelection]);
+
+  const optActiveMatchIds = useOptimizedSelectionStore(s => s.activeMatchIds);
+  const optActiveGroupIds = useOptimizedSelectionStore(s => s.activeGroupIds);
+  const optActiveInstanceIds = useOptimizedSelectionStore(s => s.activeInstanceIds);
+  const optHoveredMatchId = useOptimizedSelectionStore(s => s.hoveredMatchId);
+  const optHoveredGroupId = useOptimizedSelectionStore(s => s.hoveredGroupId);
+  const optHoveredInstanceId = useOptimizedSelectionStore(s => s.hoveredInstanceId);
+  const optHandleSelection = useOptimizedSelectionStore(s => s.handleSelection);
+  const optHandleHover = useOptimizedSelectionStore(s => s.handleHover);
+
+  const optActiveMatchSet = useMemo(() => new Set(optActiveMatchIds), [optActiveMatchIds]);
+  const optActiveGroupSet = useMemo(() => new Set(optActiveGroupIds), [optActiveGroupIds]);
+  const optActiveInstanceSet = useMemo(() => new Set(optActiveInstanceIds), [optActiveInstanceIds]);
+  const optHasAnySelection = optActiveMatchSet.size > 0 || optActiveGroupSet.size > 0 || optActiveInstanceSet.size > 0;
+
+  const optSelectionState = useMemo(() => ({
+    activeMatchSet: optActiveMatchSet, activeGroupSet: optActiveGroupSet, activeInstanceSet: optActiveInstanceSet,
+    hoveredMatchId: optHoveredMatchId, hoveredGroupId: optHoveredGroupId, hoveredInstanceId: optHoveredInstanceId, hasAnySelection: optHasAnySelection
+  }), [optActiveMatchSet, optActiveGroupSet, optActiveInstanceSet, optHoveredMatchId, optHoveredGroupId, optHoveredInstanceId, optHasAnySelection]);
+
+  const segments = useMemo(() => buildSegments(text, matches), [text, matches]);
+  const optSegments = useMemo(() => buildSegments(text, optimizedMatches), [text, optimizedMatches]);
+
+  const CHUNK_SIZE = 60;
+  const chunks = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < segments.length; i += CHUNK_SIZE) result.push(segments.slice(i, i + CHUNK_SIZE));
+    return result;
+  }, [segments]);
+
+  const optChunks = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < optSegments.length; i += CHUNK_SIZE) result.push(optSegments.slice(i, i + CHUNK_SIZE));
+    return result;
+  }, [optSegments]);
 
   const sharedClasses = "font-mono text-sm leading-snug p-3 m-0 border-none outline-none whitespace-pre-wrap break-all box-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [font-variant-ligatures:none]";
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const optOverlayRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const lastHoverRef = useRef<string | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const scheduleHover = (mId: number | null, gId: number | null, iId: string | null) => {
+    const nextKey = `${mId}-${gId}-${iId}`;
+    if (lastHoverRef.current === nextKey) return;
+    lastHoverRef.current = nextKey;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => handleHover(mId, gId, iId));
+  };
+
+  const optLastHoverRef = useRef<string | null>(null);
+  const optRafRef = useRef<number | null>(null);
+
+  const scheduleOptHover = (mId: number | null, gId: number | null, iId: string | null) => {
+    const nextKey = `${mId}-${gId}-${iId}`;
+    if (optLastHoverRef.current === nextKey) return;
+    optLastHoverRef.current = nextKey;
+    if (optRafRef.current) cancelAnimationFrame(optRafRef.current);
+    optRafRef.current = requestAnimationFrame(() => optHandleHover(mId, gId, iId));
+  };
 
   useEffect(() => {
     if (/[^\x00-\x7F]/.test(text)) {
@@ -151,11 +267,73 @@ export const SubjectEditor: React.FC = () => {
     }
   }, [text, setText]);
 
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+  const updateMinimap = () => {
+    if (!isMinimapOpen || !canvasRef.current || !overlayRef.current) return;
+    const canvas = canvasRef.current;
+    const container = overlayRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (text.length === 0) return;
+
+    const lines = text.split('\n');
+    const totalLines = Math.max(1, lines.length);
+    const lineHeight = canvas.height / totalLines;
+
+    ctx.fillStyle = 'rgba(150, 150, 150, 0.2)';
+    lines.forEach((line, i) => {
+      const lw = Math.min(canvas.width - 4, (line.length / 80) * canvas.width);
+      ctx.fillRect(2, i * lineHeight, lw, Math.max(1, lineHeight - 0.5));
+    });
+
+    ctx.fillStyle = 'rgba(236, 72, 153, 0.7)';
+    matches.forEach(m => {
+      const startLine = text.substring(0, m.start).split('\n').length - 1;
+      const endLine = text.substring(0, m.end).split('\n').length - 1;
+      for (let i = startLine; i <= endLine; i++) {
+        ctx.fillRect(0, i * lineHeight, canvas.width, Math.max(1, lineHeight));
+      }
+    });
+
+    const scrollRatio = container.scrollTop / container.scrollHeight;
+    const viewportRatio = container.clientHeight / container.scrollHeight;
+    const viewY = scrollRatio * canvas.height;
+    const viewH = Math.max(10, viewportRatio * canvas.height);
+
+    ctx.fillStyle = 'rgba(100, 150, 255, 0.3)';
+    ctx.fillRect(0, viewY, canvas.width, viewH);
+    ctx.strokeStyle = 'rgba(100, 150, 255, 0.8)';
+    ctx.strokeRect(0, viewY, canvas.width, viewH);
+  };
+
+  useEffect(() => {
+    updateMinimap();
+    window.addEventListener('resize', updateMinimap);
+    return () => window.removeEventListener('resize', updateMinimap);
+  }, [isMinimapOpen, text, matches]);
+
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement | HTMLDivElement>) => {
     if (overlayRef.current) {
       overlayRef.current.scrollTop = e.currentTarget.scrollTop;
       overlayRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
+    if (isMinimapOpen) {
+      requestAnimationFrame(updateMinimap);
+    }
+  };
+
+  const handleMinimapClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || !overlayRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const ratio = y / rect.height;
+    overlayRef.current.scrollTop = ratio * overlayRef.current.scrollHeight - (overlayRef.current.clientHeight / 2);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -166,19 +344,18 @@ export const SubjectEditor: React.FC = () => {
 
       if (el) {
         const targetEl = el.closest('[data-match-id], [data-group-id], [data-instance-id]');
-
         if (targetEl) {
           const groupId = targetEl.getAttribute('data-group-id');
           const instanceId = targetEl.getAttribute('data-instance-id');
           const matchId = groupId ? null : targetEl.getAttribute('data-match-id');
 
           if (matchId || groupId || instanceId) {
-            originalSelection.handleHover(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null);
+            scheduleHover(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null);
             return;
           }
         }
       }
-      originalSelection.handleHover(null, null, null);
+      scheduleHover(null, null, null);
     } finally {
       if (textareaRef.current) textareaRef.current.style.pointerEvents = 'auto';
     }
@@ -187,7 +364,7 @@ export const SubjectEditor: React.FC = () => {
   const handleEditorClick = (e: React.MouseEvent<HTMLTextAreaElement | HTMLDivElement>) => {
     const target = e.currentTarget as HTMLTextAreaElement;
     if (target.selectionStart !== target.selectionEnd) {
-        originalSelection.handleSelection(null, null, null, false);
+        handleSelection(null, null, null, false);
         return;
     }
 
@@ -198,19 +375,18 @@ export const SubjectEditor: React.FC = () => {
 
       if (el) {
         const targetEl = el.closest('[data-match-id], [data-group-id], [data-instance-id]');
-
         if (targetEl) {
           const groupId = targetEl.getAttribute('data-group-id');
           const instanceId = targetEl.getAttribute('data-instance-id');
           const matchId = groupId ? null : targetEl.getAttribute('data-match-id');
 
           if (matchId || groupId || instanceId) {
-            originalSelection.handleSelection(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null, e.ctrlKey || e.metaKey);
+            handleSelection(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null, e.ctrlKey || e.metaKey);
             return;
           }
         }
       }
-      originalSelection.handleSelection(null, null, null, false);
+      handleSelection(null, null, null, false);
     } finally {
       if (textareaRef.current) textareaRef.current.style.pointerEvents = 'auto';
     }
@@ -227,12 +403,12 @@ export const SubjectEditor: React.FC = () => {
         const instanceId = targetEl.getAttribute('data-instance-id');
         const matchId = groupId ? null : targetEl.getAttribute('data-match-id');
         if (matchId || groupId || instanceId) {
-          optimizedSelection.handleHover(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null);
+          scheduleOptHover(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null);
           return;
         }
       }
     }
-    optimizedSelection.handleHover(null, null, null);
+    scheduleOptHover(null, null, null);
   };
 
   const handleOptClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -246,52 +422,12 @@ export const SubjectEditor: React.FC = () => {
         const instanceId = targetEl.getAttribute('data-instance-id');
         const matchId = groupId ? null : targetEl.getAttribute('data-match-id');
         if (matchId || groupId || instanceId) {
-          optimizedSelection.handleSelection(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null, e.ctrlKey || e.metaKey);
+          optHandleSelection(matchId ? Number(matchId) : null, groupId ? Number(groupId) : null, instanceId || null, e.ctrlKey || e.metaKey);
           return;
         }
       }
     }
-    optimizedSelection.handleSelection(null, null, null, false);
-  };
-
-  const renderMatchesOverlay = (matchesList: any[], sel: any) => {
-    const hasAnySelection = sel.activeMatchIds.length > 0 || sel.activeGroupIds.length > 0 || sel.activeInstanceIds.length > 0;
-    if (matchesList.length === 0) return null;
-
-    let lastIdx = 0;
-    const elements = [];
-
-    [...matchesList].sort((a, b) => a.start - b.start).forEach((m, i) => {
-        if (m.start > lastIdx) elements.push(<span key={`text-${i}`}>{renderTextWithTooltips(text.slice(lastIdx, m.start))}</span>);
-
-        const isMatchActive = sel.activeMatchIds.includes(m.match_id);
-        const isMatchHovered = sel.hoveredMatchId === m.match_id && sel.hoveredGroupId === null;
-
-        const isRelatedGroupActive = m.groups.some((g: any) => {
-            if (sel.activeInstanceIds.length > 0) return sel.activeInstanceIds.includes(`m${m.match_id}-g${g.group_id}-${g.start}`);
-            return sel.activeGroupIds.includes(g.group_id);
-        });
-
-        const isRelatedGroupHovered = m.groups.some((g: any) => {
-            if (sel.hoveredInstanceId) return sel.hoveredInstanceId === `m${m.match_id}-g${g.group_id}-${g.start}`;
-            return sel.hoveredGroupId === g.group_id;
-        });
-
-        const isEffectivelyDimmed = hasAnySelection && !isMatchActive && !isRelatedGroupActive && !isMatchHovered && !isRelatedGroupHovered;
-        const layerClass = isMatchHovered ? '!z-50' : (isRelatedGroupHovered ? '!z-40' : (isMatchActive ? 'z-40' : (isRelatedGroupActive ? 'z-30' : (isEffectivelyDimmed ? 'z-0' : 'z-10 hover:z-20'))));
-        const matchBaseClass = isMatchActive || isMatchHovered ? matchColor.active : matchColor.base;
-        const dimEffect = isEffectivelyDimmed ? 'opacity-35 saturate-[0.7]' : 'opacity-100';
-
-        elements.push(
-            <span key={`match-${m.match_id}`} data-match-id={m.match_id} className={`relative rounded-sm transition-all duration-300 cursor-pointer ${matchBaseClass} ${layerClass} ${dimEffect}`}>
-            <MatchNode text={text} start={m.start} end={m.end} groups={m.groups} matchId={m.match_id} activeGroupIds={sel.activeGroupIds} activeInstanceIds={sel.activeInstanceIds} hasAnySelection={hasAnySelection} hoveredGroupId={sel.hoveredGroupId} hoveredInstanceId={sel.hoveredInstanceId} />
-            </span>
-        );
-        lastIdx = m.end;
-    });
-    if (lastIdx < text.length) elements.push(<span key={`text-end`}>{renderTextWithTooltips(text.slice(lastIdx))}</span>);
-    if (text.endsWith('\n')) elements.push(<br key="trailing-br" />);
-    return elements;
+    optHandleSelection(null, null, null, false);
   };
 
   return (
@@ -306,12 +442,22 @@ export const SubjectEditor: React.FC = () => {
                Ctrl/Cmd + Click to multi-select
             </span>
         </div>
+        <button
+          onClick={() => setIsMinimapOpen(!isMinimapOpen)}
+          className={`p-1.5 rounded-md transition-colors border ${isMinimapOpen ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/30' : 'text-theme-muted border-transparent hover:border-ide-border hover:bg-black/5 dark:hover:bg-white/5'}`}
+          title="Toggle Document Minimap"
+        >
+          <Map size={14} strokeWidth={2.5} />
+        </button>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="relative flex-1 min-h-[80px]" onMouseMove={handleMouseMove} onMouseLeave={() => originalSelection.handleHover(null, null, null)}>
-          <div ref={overlayRef} className={`absolute inset-0 overflow-y-auto z-0 isolate pointer-events-auto text-ide-text ${sharedClasses}`}>
-            {renderMatchesOverlay(matches, originalSelection)}
+      <div className="flex-1 flex flex-col min-h-0 relative">
+        <div className="relative flex-1 min-h-[80px]" onMouseMove={handleMouseMove} onMouseLeave={() => scheduleHover(null, null, null)}>
+          <div ref={overlayRef} onScroll={handleScroll} className={`absolute inset-0 overflow-y-auto z-0 isolate pointer-events-auto text-ide-text ${sharedClasses}`}>
+            {chunks.map((chunkSegments, idx) => (
+              <Chunk key={idx} segments={chunkSegments} selectionState={selectionState} rootRef={overlayRef} />
+            ))}
+            {text.endsWith('\n') && <br />}
           </div>
           <textarea
             ref={textareaRef}
@@ -329,6 +475,16 @@ export const SubjectEditor: React.FC = () => {
           />
         </div>
 
+        {isMinimapOpen && (
+          <div className="absolute right-4 top-4 w-16 h-[calc(100%-2rem)] bg-theme-surface/80 backdrop-blur-md border border-theme-border rounded-lg shadow-lg overflow-hidden z-[100]">
+            <canvas
+               ref={canvasRef}
+               onClick={handleMinimapClick}
+               className="w-full h-full cursor-pointer"
+            />
+          </div>
+        )}
+
         {optimizationProposal && (
             <div className="flex flex-col flex-1 min-h-[80px] border-t border-purple-500/20 bg-purple-500/5 z-10 shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
                 <div className="flex items-center px-3 py-1 bg-purple-500/10 border-b border-purple-500/10 shrink-0">
@@ -336,10 +492,12 @@ export const SubjectEditor: React.FC = () => {
                         Optimized Matches ({optimizedMatches.length})
                     </span>
                 </div>
-                <div className="relative flex-1" onMouseMove={handleOptMouseMove} onClick={handleOptClick} onMouseLeave={() => optimizedSelection.handleHover(null, null, null)}>
+                <div className="relative flex-1" onMouseMove={handleOptMouseMove} onClick={handleOptClick} onMouseLeave={() => scheduleOptHover(null, null, null)}>
                     <div ref={optOverlayRef} className={`absolute inset-0 overflow-y-auto z-0 isolate pointer-events-auto text-ide-text cursor-default ${sharedClasses}`}>
-                        {renderMatchesOverlay(optimizedMatches, optimizedSelection)}
-                        {optimizedMatches.length === 0 && <span>{text}</span>}
+                        {optChunks.map((chunkSegments, idx) => (
+                          <Chunk key={`opt-${idx}`} segments={chunkSegments} selectionState={optSelectionState} rootRef={optOverlayRef} />
+                        ))}
+                        {text.endsWith('\n') && <br />}
                     </div>
                 </div>
             </div>

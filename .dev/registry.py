@@ -13,5 +13,5 @@ VERSIONS = {
     "workers/worker-jvm": "1.0.0",
     "workers/worker-rust": "1.0.0",
     "workers/worker-v8": "1.0.0",
-    "workers/worker-php": "1.0.0",
+    "workers/worker-php": "1.0.1",
 }

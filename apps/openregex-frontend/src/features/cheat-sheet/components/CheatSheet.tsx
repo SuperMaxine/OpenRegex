@@ -11,7 +11,7 @@ export const CheatSheet: React.FC = () => {
   if (!activeEngine) return null;
 
   return (
-    <div className="w-full bg-black/5 dark:bg-black/20 rounded-[16px] p-2 overflow-y-auto max-h-[350px] h-full custom-scrollbar relative">
+    <div className="w-full h-full bg-black/5 dark:bg-black/20 rounded-[16px] p-2 overflow-y-auto custom-scrollbar relative">
       {activeEngine.engine_cheat_sheet && activeEngine.engine_cheat_sheet.length > 0 ? (
         <div className="columns-1 md:columns-2 xl:columns-3 gap-4">
           {activeEngine.engine_cheat_sheet.map((category) => (
@@ -27,7 +27,7 @@ export const CheatSheet: React.FC = () => {
                   const isActive = isCheatSheetItemHovered(activeToken, item.character);
                   const isHighlighted = isHovered || isActive;
 
-                  const handleInteract = () => handleSelection(null, null, null, false, isActive ? null : item.character);
+                  const handleInteract = () => handleSelection(null, null, null, false, isActive ? null : item.character, null, 'cheatsheet');
                   const handleEnter = () => handleHover(null, null, null, item.character);
                   const handleLeave = () => handleHover(null, null, null, null);
 
