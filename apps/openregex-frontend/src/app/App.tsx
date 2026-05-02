@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from './layout/Header';
 import { Footer } from './layout/Footer';
 import { PatternEditor } from '../features/pattern-editor';
@@ -15,7 +15,6 @@ import { useLLMStore } from '../core/store/useLLMStore';
 import { useStorageStore } from '../core/store/useStorageStore';
 import { getUrlState, updateUrlState } from '../shared/utils/link';
 import { mapPythonIndicesToJs } from '../shared/utils/subject.utils';
-import { MessageSquareText } from 'lucide-react';
 import pkg from '../../package.json';
 
 const LEGACY_ENGINE_MAP: Record<string, string> = {
@@ -32,6 +31,12 @@ export default function App() {
     frontendVersion: pkg.version,
     releaseDate: 'Unknown'
   });
+
+  const [patternRatio, setPatternRatio] = useState(0.42); // 42% default split
+  const [cheatSheetHeight, setCheatSheetHeight] = useState(30);
+  const [isDraggingCS, setIsDraggingCS] = useState(false);
+
+  const leftColumnRef = useRef<HTMLDivElement>(null);
 
   const isCheatSheetOpen = useUIStore(state => state.isCheatSheetOpen);
 
@@ -105,7 +110,13 @@ export default function App() {
           setText((urlState.text || urlState.t || '').replace(/\r/g, ''));
           useRegexStore.setState({ activeFlags: urlState.flags || [] });
         } else if (flatEngines.length > 0) {
-          setSelectedEngineId(flatEngines[0].engine_id);
+          const currentId = useRegexStore.getState().selectedEngineId;
+          const isValid = flatEngines.some((e: any) => e.engine_id === currentId);
+          if (!isValid) {
+            setSelectedEngineId(flatEngines[0].engine_id);
+          } else {
+            setSelectedEngineId(currentId);
+          }
         }
         setLoading(false);
       })
@@ -130,7 +141,6 @@ export default function App() {
     const timer = setTimeout(() => {
       fetch('/api/match', {
         method: 'POST',
-
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ engine_id: selectedEngineId, regex, text, flags: activeFlags })
       })
@@ -189,69 +199,144 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [isAvailable, isAiSidebarOpen, setAiSidebarOpen]);
 
+  const startDrag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startRatio = patternRatio;
+    const containerHeight = leftColumnRef.current?.getBoundingClientRect().height || 1;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const deltaRatio = deltaY / containerHeight;
+      let newRatio = startRatio + deltaRatio;
+      newRatio = Math.max(0.15, Math.min(newRatio, 0.85)); // Constraint limits
+      setPatternRatio(newRatio);
+    };
+
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
+  const startCheatSheetDrag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsDraggingCS(true);
+    const startY = e.clientY;
+    const startHeight = cheatSheetHeight;
+    const windowHeight = window.innerHeight || 1;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaY = moveEvent.clientY - startY;
+      const deltaVh = (deltaY / windowHeight) * 100;
+      let newHeight = startHeight + deltaVh;
+      newHeight = Math.max(10, Math.min(newHeight, 85)); // Constraint limits
+      setCheatSheetHeight(newHeight);
+    };
+
+    const onUp = () => {
+      setIsDraggingCS(false);
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  };
+
   return (
-    <div className="flex flex-col h-screen w-full relative text-theme-text overflow-hidden bg-theme-base">
-      <div className="bg-orbs">
+    <div className="flex flex-col min-h-screen lg:h-screen w-full relative text-theme-text bg-theme-base lg:overflow-hidden">
+      <div className="bg-orbs fixed inset-0 pointer-events-none">
         <div className="orb orb-1"></div>
         <div className="orb orb-2"></div>
         <div className="orb orb-3"></div>
       </div>
 
-      <div className="relative z-10 flex flex-col h-full w-full">
-        <div className="px-4 pt-4 shrink-0 w-full relative z-30">
+      <div className="relative z-10 flex flex-col h-full w-full flex-1">
+        {/* Header - Fixed Top */}
+        <div className="px-2 md:px-3 pt-2 md:pt-3 shrink-0 w-full relative z-30">
           <Header />
-
         </div>
 
-        <div className={`transition-all duration-300 ease-in-out overflow-hidden px-4 z-20 ${isCheatSheetOpen ? 'max-h-96 opacity-100 py-4' : 'max-h-0 opacity-0 py-0'}`}>
-          <CheatSheet />
-        </div>
+        {/* Workspace Area: Cheat Sheet + Main Workspaces */}
+        <div className="flex-1 flex flex-col px-2 md:px-3 py-2 md:py-3 overflow-visible lg:overflow-hidden relative min-h-0">
 
-        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-4 gap-4 h-full custom-scrollbar relative">
-          <div className="flex flex-col lg:flex-row gap-4 w-full">
+          {/* Cheat Sheet & Resizer */}
+          <div
+            className={`${isDraggingCS ? '' : 'transition-all duration-300'} ease-in-out overflow-hidden z-20 shrink-0 flex flex-col`}
+            style={{
+              height: isCheatSheetOpen ? `${cheatSheetHeight}vh` : '0px',
+              opacity: isCheatSheetOpen ? 1 : 0
+            }}
+          >
+            <div className="flex-1 min-h-0 w-full">
+              <CheatSheet />
+            </div>
+            {isCheatSheetOpen && (
+              <div
+                className="h-3 w-full cursor-row-resize flex items-center justify-center group shrink-0"
+                onPointerDown={startCheatSheetDrag}
+                title="Drag to resize Cheat Sheet"
+              >
+                <div className="w-12 h-1 rounded-full bg-theme-border group-hover:bg-theme-primary/50 transition-colors" />
+              </div>
+            )}
+          </div>
 
-            <div className="flex flex-col gap-4 shrink-0 lg:shrink w-full lg:w-7/12">
+          {/* Main Workspace - Native scroll on mobile, flex on desktop */}
+          <main className="flex-1 flex flex-col lg:flex-row gap-3 relative min-h-0">
 
-              <div className="flex-1 min-h-[200px] flex flex-col rounded-[20px] overflow-hidden glass-panel relative border border-ide-border focus-within:ring-1 focus-within:ring-theme-primary transition-all">
+            <div ref={leftColumnRef} className="flex flex-col w-full lg:w-7/12 h-[65vh] min-h-[500px] lg:h-full lg:min-h-0 shrink-0 lg:shrink relative">
+              {/* Pattern Editor */}
+              <div
+                className="flex flex-col rounded-[16px] md:rounded-[20px] overflow-hidden glass-panel relative border border-ide-border focus-within:ring-1 focus-within:ring-theme-primary transition-shadow lg:min-h-0 shrink-0"
+                style={{ flexBasis: `calc(${patternRatio * 100}% - 6px)`, minHeight: '150px' }}
+              >
                 <PatternEditor />
               </div>
 
-              <div className="flex-[1.5] min-h-[250px] flex flex-col rounded-[20px] overflow-hidden glass-panel relative border border-ide-border focus-within:ring-1 focus-within:ring-theme-primary transition-all">
-                <SubjectEditor />
+              {/* Draggable Resizer (Tight spacing) */}
+              <div
+                className="h-3 w-full cursor-row-resize flex items-center justify-center group shrink-0"
+                onPointerDown={startDrag}
+                title="Drag to resize"
+              >
+                <div className="w-12 h-1 rounded-full bg-theme-border group-hover:bg-theme-primary/50 transition-colors" />
+              </div>
 
+              {/* Subject Editor */}
+              <div
+                className="flex flex-col rounded-[16px] md:rounded-[20px] overflow-hidden glass-panel relative border border-ide-border focus-within:ring-1 focus-within:ring-theme-primary transition-shadow lg:min-h-0 shrink-0"
+                style={{ flexBasis: `calc(${(1 - patternRatio) * 100}% - 6px)`, minHeight: '200px' }}
+              >
+                <SubjectEditor />
               </div>
             </div>
 
-            <div className="w-full h-[350px] lg:h-full glass-panel rounded-[20px] overflow-hidden flex flex-col relative shadow-lg shrink-0 lg:shrink hidden md:flex lg:w-5/12">
+            {/* Inspector Panel */}
+            <div className="w-full min-h-[450px] lg:min-h-0 lg:h-full glass-panel rounded-[16px] md:rounded-[20px] overflow-hidden flex flex-col relative shadow-lg shrink-0 lg:shrink lg:w-5/12">
               <Inspector />
             </div>
 
-          </div>
+            {/* AI Sidebar */}
+            {isAiSidebarOpen && isAvailable && (
+               <div className="fixed z-50 bottom-0 right-0 md:bottom-[80px] md:right-[40px] w-full h-[85dvh] md:w-[420px] md:h-[calc(100vh-120px)] md:max-h-[750px] glass-panel rounded-t-[20px] md:rounded-[20px] overflow-hidden flex flex-col shadow-2xl shadow-purple-500/20 border-t border-x md:border border-purple-500/40 animate-in slide-in-from-bottom-8 fade-in bg-theme-base/95 backdrop-blur-xl">
+                 <AISidebar onClose={() => setAiSidebarOpen(false)} />
+               </div>
+            )}
+          </main>
+        </div>
 
-          {isAiSidebarOpen && isAvailable && (
-             <div className="fixed bottom-16 md:bottom-[100px] right-4 md:right-[52px] z-50 w-[calc(100vw-32px)] md:w-[420px] h-[80vh] md:h-[800px] max-h-[90vh] glass-panel rounded-[20px] overflow-hidden flex flex-col shadow-2xl shadow-purple-500/20 border border-purple-500/40 animate-in slide-in-from-bottom-8 fade-in bg-theme-base/95 backdrop-blur-xl">
-               <AISidebar onClose={() => setAiSidebarOpen(false)} />
-             </div>
-
-          )}
-        </main>
-
-        <div className="px-4 pb-2 shrink-0 flex items-center justify-between">
-          {isAvailable && (
-            <button
-              className="md:hidden p-2 rounded-full bg-theme-surface border border-theme-border shadow-md z-40"
-              onClick={() => setAiSidebarOpen(!isAiSidebarOpen)}
-            >
-
-              <MessageSquareText size={20} className={isAiSidebarOpen ? 'text-purple-500' : 'text-theme-muted'} />
-            </button>
-          )}
-          <div className="flex-1 ml-2 md:ml-0">
+        {/* Footer - Sits naturally at the bottom of the document on mobile */}
+        <div className="px-2 md:px-3 pb-2 md:pb-3 shrink-0 flex items-center w-full z-40 mt-auto">
+          <div className="w-full">
             <Footer
               frontendVersion={systemInfo.frontendVersion}
               backendVersion={systemInfo.backendVersion}
               backendReleaseDate={systemInfo.releaseDate}
-
             />
           </div>
         </div>

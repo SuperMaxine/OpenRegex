@@ -73,7 +73,7 @@ def main():
         "workers/worker-php": [
             ("deploy/dockerfiles/worker-php.dockerfile", r'^ENV WORKER_VERSION="[^"]+"', 'ENV WORKER_VERSION="{}"')
         ],
-        "workes/worker-ai": [
+        "workers/worker-ai": [
             ("deploy/dockerfiles/worker-ai.dockerfile", r'^ENV WORKER_VERSION="[^"]+"', 'ENV WORKER_VERSION="{}"')
         ]
     }

@@ -38,11 +38,11 @@ export const OptimizedPatternSplitView: React.FC<OptimizedPatternSplitViewProps>
         if (idxAttr) tokenIndex = Number(idxAttr);
       }
       if (groupId !== null || token !== null) {
-        optimizedSelection.handleSelection(null, groupId, null, e.ctrlKey || e.metaKey, token, tokenIndex);
+        optimizedSelection.handleSelection(null, groupId, null, e.ctrlKey || e.metaKey, token, tokenIndex, 'pattern');
         return;
       }
     }
-    optimizedSelection.handleSelection(null, null, null, false, null);
+    optimizedSelection.handleSelection(null, null, null, false, null, null, 'pattern');
   };
 
   const handleOptMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {

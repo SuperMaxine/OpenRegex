@@ -21,7 +21,7 @@ export const PatternInputArea: React.FC<PatternInputAreaProps> = ({ cheatSheetIt
   const handleEditorClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const cursorStart = e.currentTarget.selectionStart;
     const cursorEnd = e.currentTarget.selectionEnd;
-    if (cursorStart !== cursorEnd) { originalSelection.handleSelection(null, null, null, false, null); return; }
+    if (cursorStart !== cursorEnd) { originalSelection.handleSelection(null, null, null, false, null, null, 'pattern'); return; }
 
     if (!patternBackdropRef.current || !patternBackdropDivRef.current) return;
     try {
@@ -39,11 +39,11 @@ export const PatternInputArea: React.FC<PatternInputAreaProps> = ({ cheatSheetIt
         }
 
         if (groupId !== null || token !== null) {
-          originalSelection.handleSelection(null, groupId, null, e.ctrlKey || e.metaKey, token, tokenIndex);
+          originalSelection.handleSelection(null, groupId, null, e.ctrlKey || e.metaKey, token, tokenIndex, 'pattern');
           return;
         }
       }
-      originalSelection.handleSelection(null, null, null, false, null);
+      originalSelection.handleSelection(null, null, null, false, null, null, 'pattern');
     } finally {
       patternBackdropRef.current.style.pointerEvents = 'auto';
     }

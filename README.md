@@ -246,7 +246,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-60}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-60}
+      - API_AI_ENDPOINT_ENABLE=${API_AI_ENDPOINT_ENABLE:-false}
+      - API_REGEX_ENDPOINT_ENABLE=${API_REGEX_ENDPOINT_ENABLE:-true}
     depends_on:
       redis:
         condition: service_healthy
@@ -256,13 +260,15 @@ services:
     image: sunnev/openregex-frontend:latest
     ports:
       - "5000:5000"
+    environment:
+      - ROBOTS_META=${ROBOTS_META:-noindex, nofollow}
     restart: always
     depends_on:
       - backend
 
   # --- OPTIONAL AI WORKER ---
   # Uncomment the lines below to enable LLM-powered regex assistance.
-  # 🛡️ SECURITY RECOMMENDATION: For production, we strongly advise pointing LLM_ENDPOINT 
+  # 🛡️ SECURITY RECOMMENDATION: For production, we strongly advise pointing LLM_ENDPOINT
   # to a proxy server (like LiteLLM) to safely manage and isolate your API keys.
   # worker-ai:
   #   image: sunnev/openregex-worker-ai:latest
@@ -280,7 +286,12 @@ services:
   worker-python:
     image: sunnev/openregex-worker-python:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -289,7 +300,12 @@ services:
   worker-c-cpp:
     image: sunnev/openregex-worker-c-cpp:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -298,7 +314,12 @@ services:
   worker-v8:
     image: sunnev/openregex-worker-v8:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -307,7 +328,12 @@ services:
   worker-jvm:
     image: sunnev/openregex-worker-jvm:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -316,7 +342,12 @@ services:
   worker-rust:
     image: sunnev/openregex-worker-rust:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -325,7 +356,12 @@ services:
   worker-dotnet:
     image: sunnev/openregex-worker-dotnet:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -334,7 +370,12 @@ services:
   worker-php:
     image: sunnev/openregex-worker-php:latest
     environment:
-      REDIS_URL: redis://redis:6379
+      - REDIS_URL=redis://redis:6379
+      - WORKER_EXECUTION_TIMEOUT_MS=${WORKER_EXECUTION_TIMEOUT_MS:-1000}
+      - WORKER_MAX_INPUT_SIZE=${WORKER_MAX_INPUT_SIZE:-10485760}
+      - WORKER_MAX_MATCHES=${WORKER_MAX_MATCHES:-10000}
+      - WORKER_MAX_GROUPS=${WORKER_MAX_GROUPS:-1000}
+      - WORKER_MAX_JSON_SIZE=${WORKER_MAX_JSON_SIZE:-10485760}
     depends_on:
       redis:
         condition: service_healthy
@@ -364,8 +405,6 @@ OpenRegex/
 │     └── docker-compose.yml      # Orchestration of the engine fleet for deployment
 └── docker-compose.yml      # Example docker compose ready to use images from docker hub
 ```
-
----
 
 ## ❤️ Support
 

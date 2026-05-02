@@ -21,5 +21,5 @@ docker-compose -f "%PROJECT_ROOT%\deploy\docker-compose.dev.yml" --env-file "%PR
 echo.
 echo --- Setup complete. Application is running. ---
 
-echo --- http://localhost:5000/ ---
+echo --- http://localhost:5000 ---
 endlocal

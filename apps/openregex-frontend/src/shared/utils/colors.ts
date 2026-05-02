@@ -29,7 +29,7 @@ export const getGroupColorClasses = (id: number, isActive: boolean, isDimmed: bo
   const c = groupColors[(id - 1) % groupColors.length];
   const baseClass = isActive ? c.active : c.base;
   const opacityClass = isDimmed && !isActive ? 'opacity-40 saturate-[0.8]' : 'opacity-100';
-  return `${baseClass} ${opacityClass} transition-all duration-300`;
+  return `${baseClass} ${opacityClass} transition-colors duration-150`;
 };
 
 export const getInspectorColor = (id: number) => {
