@@ -3,11 +3,15 @@ import uuid
 import asyncio
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from openregex_libs.models import LLMOptimizeRequest, LLMGenerateRequest
 from backend.core.redis import redis_client
 from backend.core.config import API_AI_ENDPOINT_ENABLE, MAX_AI_QUEUE
 
 router = APIRouter(tags=["AI"], include_in_schema=API_AI_ENDPOINT_ENABLE)
+
+class LLMTitleRequest(BaseModel):
+    message: str
 
 @router.get("/llm/status")
 async def get_llm_status():
@@ -76,3 +80,7 @@ async def llm_optimize(request: LLMOptimizeRequest):
 @router.post("/llm/generate")
 async def llm_generate(request: LLMGenerateRequest):
     return await _dispatch_llm_stream("queue:llm:generate", request.model_dump(), timeout=600.0)
+
+@router.post("/llm/generate-title")
+async def llm_generate_title(request: LLMTitleRequest):
+    return await _dispatch_llm_stream("queue:llm:title", request.model_dump(), timeout=30.0)
