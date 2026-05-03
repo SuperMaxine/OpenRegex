@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Activity, Share2, Check, Lightbulb, Trash2, BookmarkPlus, Save, ChevronDown, Clock, Undo2, Redo2, Bookmark } from 'lucide-react';
+import { Activity, Share2, Check, Lightbulb, Trash2, BookmarkPlus, Save, ChevronDown, Clock, Undo2, Redo2, Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRegexStore } from '../../../../core/store/useRegexStore';
 import { useSelectionStore } from '../../../../core/store/useSelectionStore';
 import { useOptimizedSelectionStore } from '../../../../core/store/useOptimizedSelectionStore';
@@ -94,8 +94,36 @@ export const PatternEditorHeader: React.FC = () => {
   const [isNamingSave, setIsNamingSave] = useState(false);
   const [customSaveName, setCustomSaveName] = useState('');
 
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   const saveMenuRef = useRef<HTMLDivElement>(null);
   const historyMenuRef = useRef<HTMLDivElement>(null);
+  const flagsContainerRef = useRef<HTMLDivElement>(null);
+
+  const checkScroll = () => {
+    if (flagsContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = flagsContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
+
+  const handleScroll = (direction: 'left' | 'right') => {
+    if (flagsContainerRef.current) {
+      const scrollAmount = 150;
+      flagsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -195,7 +223,7 @@ export const PatternEditorHeader: React.FC = () => {
           key={flag}
           onClick={() => toggleFlag(flag)}
           title={flagInfo.description}
-          className={`font-mono text-[11px] px-2 py-0.5 rounded-sm border transition-colors ${colorClass}`}
+          className={`font-mono text-[10px] px-1.5 py-0.5 rounded-sm border transition-colors shrink-0 ${colorClass}`}
         >
           /{flag}
         </button>
@@ -204,7 +232,7 @@ export const PatternEditorHeader: React.FC = () => {
   };
 
   return (
-    <div className="component-header flex-wrap gap-2 w-full relative">
+    <div className="component-header flex flex-wrap md:flex-nowrap items-center justify-between gap-2 w-full relative">
       {/* Left - Label & Main Actions */}
       <div className="flex items-center gap-3 justify-start z-20 shrink-0">
         <div className="flex items-center gap-2">
@@ -301,29 +329,53 @@ export const PatternEditorHeader: React.FC = () => {
       </div>
 
       {/* Center - Flags */}
-      <div className="flex items-center justify-center w-full order-3 mt-1 md:mt-0 md:w-auto md:order-none md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-0 overflow-x-auto custom-scrollbar pb-0.5 md:pb-0 pointer-events-none">
+      <div className="flex items-center justify-center w-full order-last mt-2 md:mt-0 md:w-auto md:order-none md:flex-1 md:min-w-0 z-0 relative px-0 md:px-2">
         {availableFlags.length > 0 && (
-          <div className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 p-1 rounded-lg border border-black/5 dark:border-white/5 shrink-0 pointer-events-auto">
-            {groupedFlags.basic.length > 0 && (
-              <div className="flex items-center gap-1">
-                {renderFlagGroup(groupedFlags.basic)}
-              </div>
+          <div className="relative flex items-center bg-black/5 dark:bg-white/5 p-1 rounded-lg border border-black/5 dark:border-white/5 w-full md:w-auto max-w-full overflow-hidden pointer-events-auto">
+            {canScrollLeft && (
+              <button
+                onClick={() => handleScroll('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-0.5 bg-gradient-to-r from-theme-base via-theme-base to-transparent text-theme-muted hover:text-theme-text transition-colors h-full flex items-center"
+              >
+                <ChevronLeft size={14} className="mr-2" />
+              </button>
             )}
-            {groupedFlags.advance.length > 0 && (
-              <>
-                {groupedFlags.basic.length > 0 && <div className="w-px h-3.5 bg-theme-border opacity-50 mx-0.5" />}
-                <div className="flex items-center gap-1">
-                  {renderFlagGroup(groupedFlags.advance)}
+
+            <div
+              ref={flagsContainerRef}
+              onScroll={checkScroll}
+              className="flex items-center gap-1.5 overflow-x-auto w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+            >
+              {groupedFlags.basic.length > 0 && (
+                <div className="flex items-center gap-1 shrink-0">
+                  {renderFlagGroup(groupedFlags.basic)}
                 </div>
-              </>
-            )}
-            {groupedFlags.unique.length > 0 && (
-              <>
-                {(groupedFlags.basic.length > 0 || groupedFlags.advance.length > 0) && <div className="w-px h-3.5 bg-theme-border opacity-50 mx-0.5" />}
-                <div className="flex items-center gap-1">
-                  {renderFlagGroup(groupedFlags.unique)}
-                </div>
-              </>
+              )}
+              {groupedFlags.advance.length > 0 && (
+                <>
+                  {groupedFlags.basic.length > 0 && <div className="w-px h-3.5 bg-theme-border opacity-50 mx-0.5 shrink-0" />}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {renderFlagGroup(groupedFlags.advance)}
+                  </div>
+                </>
+              )}
+              {groupedFlags.unique.length > 0 && (
+                <>
+                  {(groupedFlags.basic.length > 0 || groupedFlags.advance.length > 0) && <div className="w-px h-3.5 bg-theme-border opacity-50 mx-0.5 shrink-0" />}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {renderFlagGroup(groupedFlags.unique)}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {canScrollRight && (
+              <button
+                onClick={() => handleScroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-0.5 bg-gradient-to-l from-theme-base via-theme-base to-transparent text-theme-muted hover:text-theme-text transition-colors h-full flex items-center"
+              >
+                <ChevronRight size={14} className="ml-2" />
+              </button>
             )}
           </div>
         )}
