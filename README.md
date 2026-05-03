@@ -212,6 +212,15 @@ OpenRegex is built on strict architectural guidelines to ensure high performance
 
 ---
 
+# OpenRegex Platform Changelog
+
+This is the central orchestration log for the OpenRegex ecosystem. Detailed technical logs for individual components are
+maintained within their respective directories:
+
+**👉 [Changelog table](./CHANGELOG.md)**
+
+---
+
 ## ❤️ Support
 
 You like my work? Just sponsor me!

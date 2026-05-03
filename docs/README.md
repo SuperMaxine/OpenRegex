@@ -42,3 +42,13 @@ OpenRegex/
 
 * **[Commit Message Guidelines](guidelines/Commit.md)**
   Instructions for utilizing Conventional Commits to ensure reliable version increments and automated repository history.
+
+
+## Project Evolution
+
+* **[Evolution](history/evolution.md)**
+    
+
+* **[v1.x](history/1.x.md)**
+  
+  
