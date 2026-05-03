@@ -7,7 +7,7 @@ maintained within their respective directories:
 
 ## Platform Decoupling
 
-**Last Update: 2026-05-02**
+**Last Update: 2026-05-03**
 
 ### Component Version Snapshot
 
@@ -16,7 +16,7 @@ maintained within their respective directories:
 | **OpenRegex Frontend** | [View](./apps/openregex-frontend/CHANGELOG.md) | `2.0.0.beta` | 2026.05.01 | `2.0.0.dev` | 2026.05.01 |
 | **OpenRegex Backend** | [View](./apps/openregex-backend/CHANGELOG.md) | `2.0.0` | 2026.05.01 | N/A | N/A |
 | **Python Shared Library** | [View](./libs/python-shared/CHANGELOG.md) | `1.0.0` | 2026.05.01 | N/A | N/A |
-| **Worker AI** | [View](./workers/worker-ai/CHANGELOG.md) | `1.0.0` | 2026.05.01 | N/A | N/A |
+| **Worker AI** | [View](./workers/worker-ai/CHANGELOG.md) | `1.1.0` | 2026.05.03 | N/A | N/A |
 | **Worker Python** | [View](./workers/worker-python/CHANGELOG.md) | `1.0.0` | 2026.05.01 | N/A | N/A |
 | **Worker C/C++** | [View](./workers/worker-c-cpp/CHANGELOG.md) | `1.0.0` | 2026.05.01 | N/A | N/A |
 | **Worker .NET** | [View](./workers/worker-dotnet/CHANGELOG.md) | `1.0.0` | 2026.05.01 | N/A | N/A |

@@ -5,7 +5,7 @@ VERSIONS = {
     "apps/openregex-frontend": "2.0.0.beta",
     "apps/openregex-backend": "2.0.0",
     "libs/python-shared": "1.0.0",
-    "workers/worker-ai": "1.0.0",
+    "workers/worker-ai": "1.1.0",
     "workers/worker-python": "1.0.0",
     "workers/worker-c-cpp": "1.0.0",
     "workers/worker-dotnet": "1.0.0",

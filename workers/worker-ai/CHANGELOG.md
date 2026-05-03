@@ -2,8 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - YYYY-MM-DD
-
+## [1.1.0] - 2026-05-03
 ### Added
 - Inject engine cheat sheet into prompt context to enforce target engine syntax
 
