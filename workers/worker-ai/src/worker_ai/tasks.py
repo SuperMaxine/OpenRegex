@@ -54,6 +54,20 @@ def _normalize_regex_context_mode(value: str | None) -> str:
     return "auto"
 
 
+def _compare_match_results(original_matches: list, candidate_matches: list) -> bool:
+    if len(original_matches) != len(candidate_matches):
+        return False
+    for orig, cand in zip(original_matches, candidate_matches):
+        if orig.start != cand.start or orig.end != cand.end or orig.full_match != cand.full_match:
+            return False
+        if len(orig.groups) != len(cand.groups):
+            return False
+        for og, cg in zip(orig.groups, cand.groups):
+            if og.start != cg.start or og.end != cg.end or og.content != cg.content or og.name != cg.name:
+                return False
+    return True
+
+
 def _analyze_generate_intent(
     client: LLMClient,
     engine_context: str,
@@ -110,6 +124,7 @@ def _analyze_generate_intent(
 def handle_optimize(client: LLMClient, broker: RedisBroker, task_dict: dict) -> None:
     task_id = task_dict.get("task_id")
     req = LLMOptimizeRequest.model_validate(task_dict)
+    text = broker.resolve_text_payload(task_dict)
     engine_context = broker.get_engine_context(req.engine_id)
 
     current_regex = req.regex
@@ -133,17 +148,18 @@ def handle_optimize(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
     original_test = broker.test_regex_against_engine(
         req.engine_id,
         current_regex,
-        req.text,
+        text,
         current_flags,
     )
 
-    original_match_count = (
-        len(original_test.matches)
+    original_matches = (
+        original_test.matches
         if original_test.success
         and hasattr(original_test, "matches")
         and original_test.matches
-        else 0
+        else []
     )
+    original_match_count = len(original_matches)
 
     for attempt in range(1, 4):
         if not broker.is_client_connected(task_id):
@@ -161,7 +177,7 @@ def handle_optimize(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
 
         prompt = build_optimize_prompt(
             engine_context,
-            req.text,
+            text,
             current_regex,
             current_flags,
             error_feedback,
@@ -194,16 +210,17 @@ def handle_optimize(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
             test_result = broker.test_regex_against_engine(
                 req.engine_id,
                 candidate_regex,
-                req.text,
+                text,
                 candidate_flags,
             )
 
             if test_result.success:
-                candidate_match_count = (
-                    len(test_result.matches)
+                candidate_matches = (
+                    test_result.matches
                     if hasattr(test_result, "matches") and test_result.matches
-                    else 0
+                    else []
                 )
+                candidate_match_count = len(candidate_matches)
 
                 if original_match_count > 0 and candidate_match_count == 0:
                     test_result.success = False
@@ -211,12 +228,11 @@ def handle_optimize(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
                         "Regex syntax is valid, but matches dropped to 0 "
                         f"(expected {original_match_count})."
                     )
-                elif candidate_match_count != original_match_count:
+                elif not _compare_match_results(original_matches, candidate_matches):
                     explanation += (
                         "\n\n**Warning: Behavior change detected.** "
-                        f"The optimized regex found {candidate_match_count} matches, "
-                        f"but the original regex found {original_match_count} matches. "
-                        "Please review the changes."
+                        "The optimized regex match results (positions, content, or groups) "
+                        "differ from the original. Please review the changes carefully."
                     )
 
             if test_result.success:
@@ -293,6 +309,7 @@ def handle_optimize(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
 def handle_generate(client: LLMClient, broker: RedisBroker, task_dict: dict) -> None:
     task_id = task_dict.get("task_id")
     req = LLMGenerateRequest.model_validate(task_dict)
+    text = broker.resolve_text_payload(task_dict)
     engine_context = broker.get_engine_context(req.engine_id)
 
     history = _parse_history(req.description)
@@ -346,7 +363,7 @@ def handle_generate(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
                 intent_result = _analyze_generate_intent(
                     client=client,
                     engine_context=engine_context,
-                    text=req.text,
+                    text=text,
                     flags=req.flags,
                     history=history,
                     current_regex=current_regex,
@@ -417,7 +434,7 @@ def handle_generate(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
         try:
             messages = build_generate_messages(
                 engine_context=engine_context,
-                text=req.text,
+                text=text,
                 flags=req.flags,
                 history=history,
                 error_feedback=error_feedback,
@@ -462,7 +479,7 @@ def handle_generate(client: LLMClient, broker: RedisBroker, task_dict: dict) -> 
             test_result = broker.test_regex_against_engine(
                 req.engine_id,
                 candidate_regex,
-                req.text,
+                text,
                 candidate_flags,
             )
 

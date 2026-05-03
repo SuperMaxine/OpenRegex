@@ -42,6 +42,15 @@ class RedisBroker:
         else:
             self.redis.publish(f"result:llm:{task_id}", payload)
 
+    def resolve_text_payload(self, task_dict: dict) -> str:
+        text = task_dict.get("text", "")
+        payload_id = task_dict.get("text_payload_id")
+        if not text and payload_id:
+            cached_text = self.redis.get(payload_id)
+            if cached_text:
+                return cached_text
+        return text
+
     def get_engine_context(self, engine_id: str) -> str:
         try:
             workers_data = self._get_workers()
