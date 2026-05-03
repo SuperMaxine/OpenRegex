@@ -12,15 +12,15 @@ export const Header: React.FC = () => {
   useTheme();
 
   return (
-    <header className="flex flex-col md:flex-row justify-between items-center md:items-stretch z-30 h-auto md:h-[80px] relative gap-3 md:gap-4 w-full pb-1 md:pb-0">
+    <header className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap justify-between items-center lg:items-stretch z-30 h-auto lg:h-[80px] relative gap-3 lg:gap-4 w-full pb-1 lg:pb-0">
 
-      <div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-start h-auto min-h-[64px] md:min-h-0 md:h-full order-2 md:order-1 relative z-50">
-        <div className="glass-panel rounded-[24px] px-5 py-2.5 md:py-2 flex items-center justify-center shadow-lg border-theme-border h-full w-full md:w-auto">
+      <div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-start h-auto min-h-[64px] lg:min-h-0 lg:h-full order-2 lg:order-1 relative z-50">
+        <div className="glass-panel rounded-[24px] px-5 py-2.5 lg:py-2 flex items-center justify-center shadow-lg border-theme-border h-full w-full md:w-auto">
           <EnginePanel />
         </div>
       </div>
 
-      <div className="w-full md:w-auto flex-none flex items-center justify-center h-[56px] md:h-full order-1 md:order-2">
+      <div className="w-full lg:w-auto flex-none flex items-center justify-center h-[56px] lg:h-full order-1 lg:order-2">
         <div className="glass-panel rounded-[28px] px-10 flex items-center justify-center shadow-xl border-theme-border h-full w-full md:w-auto">
           <a
             href="https://openregex.com"
@@ -38,7 +38,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-end h-[64px] md:h-full order-3 md:order-3">
+      <div className="w-full md:w-auto md:flex-1 flex justify-center md:justify-end h-[64px] lg:h-full order-3 lg:order-3">
         {/* Removed nested dark pill. Buttons sit directly on the glass-panel for a unified theme. */}
         <div className="glass-panel rounded-[24px] p-1.5 flex items-center justify-center gap-1 shadow-lg border-theme-border h-full w-full md:w-auto">
 
