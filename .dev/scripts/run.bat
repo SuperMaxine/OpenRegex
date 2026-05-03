@@ -1,0 +1,46 @@
+@echo off
+setlocal enabledelayedexpansion
+
+:: Set directories based on the script location
+set SCRIPT_DIR=%~dp0
+set PY_DIR=!SCRIPT_DIR!..\py
+
+echo ====================================
+echo OpenRegex Dev Tools Runner
+echo ====================================
+echo [1] Apply Versions
+echo [2] Build and Push
+echo [3] Branch Status
+echo [4] Check Scopes
+echo [5] AI Commit: Amend Latest
+echo [6] AI Commit: Squash Commits
+echo [7] Update Changelog (Current Branch)
+echo ====================================
+set /p choice="Select task to run: "
+
+if "!choice!"=="1" (
+    echo Running apply_versions.py...
+    python "!PY_DIR!\tools\apply_versions.py"
+) else if "!choice!"=="2" (
+    echo Running build_and_push.py...
+    python "!PY_DIR!\tools\build_and_push.py"
+) else if "!choice!"=="3" (
+    echo Running branch_status.py...
+    python "!PY_DIR!\tools\branch_status.py"
+) else if "!choice!"=="4" (
+    echo Running check_scopes.py...
+    python "!PY_DIR!\tools\check_scopes.py"
+) else if "!choice!"=="5" (
+    echo Running ai_commit.py - Amend...
+    python "!PY_DIR!\tools\ai_commit.py" --amend
+) else if "!choice!"=="6" (
+    echo Running ai_commit.py - Interactive Squash...
+    python "!PY_DIR!\tools\ai_commit.py" --squash-interactive
+) else if "!choice!"=="7" (
+    echo Running update_changelog.py...
+    python "!PY_DIR!\tools\update_changelog.py"
+) else (
+    echo Invalid choice.
+)
+
+pause
