@@ -2,8 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - YYYY-MM-DD
-
+## [1.2.0] - 2026-05-03
 ### Added
 - Implement handle_title task for LLM processing
 
