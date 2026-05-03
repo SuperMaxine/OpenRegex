@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - YYYY-MM-DD
+
+### Fixed
+- allow vertical scrolling on mobile by replacing fixed height and overflow-hidden with min-h-screen
+
 ## [2.0.0.beta] - 2026-04-30
 
 - Initial release as a separate component.

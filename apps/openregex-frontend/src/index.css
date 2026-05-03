@@ -41,10 +41,9 @@
   }
 
   html, body, #root {
-    @apply h-full m-0 p-0 font-sans transition-colors duration-300 antialiased;
+    @apply min-h-screen m-0 p-0 font-sans transition-colors duration-300 antialiased overflow-x-hidden;
     background-color: var(--theme-base);
     color: var(--theme-text);
-    overflow: hidden;
   }
 
   .bg-orbs {
