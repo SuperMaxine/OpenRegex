@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 - Improve readability of AI assistant chat rendering including pipeline and header bar
 - update header responsiveness to wrap engine and cheat sheet below logo on tablet view
 
+### Added
+- Persistent chat history feature for the AI assistant
+
 ## [2.0.0.beta] - 2026-04-30
 
 - Initial release as a separate component.

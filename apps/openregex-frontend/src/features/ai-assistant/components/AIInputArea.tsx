@@ -12,7 +12,10 @@ export const AIInputArea: React.FC = () => {
   const regex = useRegexStore((state) => state.regex);
   const activeFlags = useRegexStore((state) => state.activeFlags);
 
-  const chatHistory = useLLMStore((state) => state.chatHistory);
+  const sessions = useLLMStore((state) => state.sessions || []);
+  const activeSessionId = useLLMStore((state) => state.activeSessionId);
+  const chatHistory = sessions.find(s => s.id === activeSessionId)?.messages || [];
+
   const isOptimizing = useLLMStore((state) => state.isOptimizing);
   const abortPipeline = useLLMStore((state) => state.abortPipeline);
 

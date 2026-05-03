@@ -33,6 +33,13 @@ export interface ChatMessage {
   pipelineAttempts?: PipelineAttempt[];
 }
 
+export interface ChatSession {
+  id: string;
+  createdAt: number;
+  preview: string;
+  messages: ChatMessage[];
+}
+
 export interface OptimizationProposal {
   originalRegex: string;
   optimizedRegex: string;
@@ -46,8 +53,10 @@ interface LLMState {
   workerReleaseDate: string | null;
   pipelineStatus: string | null;
   pipelineAttempts: PipelineAttempt[];
-  chatHistory: ChatMessage[];
+  sessions: ChatSession[];
+  activeSessionId: string | null;
   isAiSidebarOpen: boolean;
+  isAiHistoryOpen: boolean;
   optimizationProposal: OptimizationProposal | null;
   optimizationViewMode: 'original' | 'optimized';
   isOptimizing: boolean;
@@ -67,8 +76,11 @@ interface LLMState {
     intent?: string
   ) => void;
   addChatMessage: (msg: ChatMessage) => void;
-  clearChatHistory: () => void;
+  createNewSession: () => void;
+  loadSession: (id: string) => void;
+  deleteSession: (id: string) => void;
   setAiSidebarOpen: (isOpen: boolean) => void;
+  setAiHistoryOpen: (isOpen: boolean) => void;
   toggleAiSidebar: () => void;
   setOptimizationProposal: (proposal: OptimizationProposal | null) => void;
   setOptimizationViewMode: (mode: 'original' | 'optimized') => void;
@@ -92,8 +104,10 @@ export const useLLMStore = create<LLMState>()(
       workerReleaseDate: null,
       pipelineStatus: null,
       pipelineAttempts: [],
-      chatHistory: [],
+      sessions: [],
+      activeSessionId: null,
       isAiSidebarOpen: false,
+      isAiHistoryOpen: false,
       optimizationProposal: null,
       optimizationViewMode: 'original',
       isOptimizing: false,
@@ -251,13 +265,71 @@ export const useLLMStore = create<LLMState>()(
         }),
 
       addChatMessage: (msg) =>
-        set((state) => ({
-          chatHistory: [...state.chatHistory, msg],
-        })),
+        set((state) => {
+          let activeId = state.activeSessionId;
+          const newSessions = [...(state.sessions || [])];
 
-      clearChatHistory: () => set({ chatHistory: [] }),
+          if (!activeId || !newSessions.some(s => s.id === activeId)) {
+            activeId = crypto.randomUUID();
+            newSessions.push({
+              id: activeId,
+              createdAt: Date.now(),
+              preview: msg.role === 'user' ? msg.content.substring(0, 50) : 'New Chat',
+              messages: []
+            });
+          }
+
+          const targetIndex = newSessions.findIndex(s => s.id === activeId);
+          if (targetIndex !== -1) {
+            const s = newSessions[targetIndex];
+            const newPreview = s.messages.length === 0 && msg.role === 'user'
+              ? msg.content.substring(0, 50)
+              : s.preview;
+            newSessions[targetIndex] = { ...s, preview: newPreview, messages: [...s.messages, msg] };
+          }
+
+          return { sessions: newSessions, activeSessionId: activeId };
+        }),
+
+      createNewSession: () =>
+        set((state) => {
+          const existingEmpty = (state.sessions || []).find(s => s.messages.length === 0);
+          if (existingEmpty) {
+            return {
+              activeSessionId: existingEmpty.id,
+              isAiHistoryOpen: false
+            };
+          }
+
+          const newId = crypto.randomUUID();
+          const newSession = {
+            id: newId,
+            createdAt: Date.now(),
+            preview: 'New Chat',
+            messages: []
+          };
+          return {
+            sessions: [newSession, ...(state.sessions || [])],
+            activeSessionId: newId,
+            isAiHistoryOpen: false
+          };
+        }),
+
+      loadSession: (id) => set({ activeSessionId: id, isAiHistoryOpen: false }),
+
+      deleteSession: (id) =>
+        set((state) => {
+          const newSessions = (state.sessions || []).filter((s) => s.id !== id);
+          let newActiveId = state.activeSessionId;
+          if (newActiveId === id) {
+            newActiveId = newSessions.length > 0 ? newSessions[0].id : null;
+          }
+          return { sessions: newSessions, activeSessionId: newActiveId };
+        }),
 
       setAiSidebarOpen: (isOpen) => set({ isAiSidebarOpen: isOpen }),
+
+      setAiHistoryOpen: (isOpen) => set({ isAiHistoryOpen: isOpen }),
 
       toggleAiSidebar: () =>
         set((state) => ({
@@ -291,7 +363,8 @@ export const useLLMStore = create<LLMState>()(
     {
       name: 'llm-chat-storage',
       partialize: (state) => ({
-        chatHistory: state.chatHistory,
+        sessions: state.sessions,
+        activeSessionId: state.activeSessionId,
       }),
     }
   )

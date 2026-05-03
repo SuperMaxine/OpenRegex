@@ -5,7 +5,10 @@ import { AIPipelineTracker } from './AIPipelineTracker';
 import { MessageSquareDashed } from 'lucide-react';
 
 export const AIChatHistoryList: React.FC = () => {
-  const chatHistory = useLLMStore(state => state.chatHistory);
+  const sessions = useLLMStore(state => state.sessions || []);
+  const activeSessionId = useLLMStore(state => state.activeSessionId);
+  const chatHistory = sessions.find(s => s.id === activeSessionId)?.messages || [];
+
   const pipelineAttempts = useLLMStore(state => state.pipelineAttempts);
   const pipelineStatus = useLLMStore(state => state.pipelineStatus);
   const isOptimizing = useLLMStore(state => state.isOptimizing);

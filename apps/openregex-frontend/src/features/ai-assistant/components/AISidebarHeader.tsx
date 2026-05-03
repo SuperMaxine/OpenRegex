@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, X, Trash2 } from 'lucide-react';
+import { Sparkles, X, Plus, History } from 'lucide-react';
 import { useRegexStore } from '../../../core/store/useRegexStore';
 import { useLLMStore } from '../../../core/store/useLLMStore';
 
@@ -8,7 +8,11 @@ export const AISidebarHeader: React.FC<{ onClose: () => void }> = ({ onClose }) 
   const engines = useRegexStore(state => state.engines);
   const workerVersion = useLLMStore(state => state.workerVersion);
   const workerReleaseDate = useLLMStore(state => state.workerReleaseDate);
-  const clearChatHistory = useLLMStore(state => state.clearChatHistory);
+
+  const createNewSession = useLLMStore(state => state.createNewSession);
+  const setAiHistoryOpen = useLLMStore(state => state.setAiHistoryOpen);
+  const isAiHistoryOpen = useLLMStore(state => state.isAiHistoryOpen);
+
   const activeEngine = engines.find(e => e.engine_id === selectedEngineId);
 
   return (
@@ -39,10 +43,26 @@ export const AISidebarHeader: React.FC<{ onClose: () => void }> = ({ onClose }) 
 
       {/* Right: Actions */}
       <div className="flex items-center justify-end gap-1.5 min-w-0 shrink-0">
-        <button onClick={clearChatHistory} className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-bold text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 rounded transition-colors" title="Clear Chat">
-          <Trash2 size={12} /> <span className="hidden sm:inline">Clear</span>
+        <button
+          onClick={() => { createNewSession(); setAiHistoryOpen(false); }}
+          className="p-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded transition-colors"
+          title="New Chat"
+        >
+          <Plus size={16} />
         </button>
-        <button onClick={onClose} className="p-1.5 text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 rounded-full transition-colors shrink-0" title="Close AI Assistant">
+        <button
+          onClick={() => setAiHistoryOpen(!isAiHistoryOpen)}
+          className={`p-1.5 rounded transition-colors ${isAiHistoryOpen ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/20' : 'text-theme-muted bg-black/5 dark:bg-white/5 hover:text-indigo-500 hover:bg-indigo-500/10'}`}
+          title="Chat History"
+        >
+          <History size={16} />
+        </button>
+        <div className="w-px h-3.5 bg-theme-border opacity-50 mx-0.5" />
+        <button
+          onClick={onClose}
+          className="p-1.5 text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 rounded-full transition-colors shrink-0"
+          title="Close AI Assistant"
+        >
           <X size={16} />
         </button>
       </div>

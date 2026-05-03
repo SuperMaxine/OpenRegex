@@ -14,6 +14,7 @@ export const useAIFix = () => {
         if (useLLMStore.getState().abortController) return;
 
         useLLMStore.getState().setAiSidebarOpen(true);
+        useLLMStore.getState().setAiHistoryOpen(false);
 
         const userMsg = {
             role: 'user' as const,
@@ -28,13 +29,17 @@ export const useAIFix = () => {
         useLLMStore.getState().setAbortController(ctrl);
 
         try {
+            const sessions = useLLMStore.getState().sessions || [];
+            const activeSessionId = useLLMStore.getState().activeSessionId;
+            const chatHistory = sessions.find(s => s.id === activeSessionId)?.messages || [];
+
             const res = await fetch('/api/llm/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     engine_id: regexStore.selectedEngineId,
                     text: regexStore.text,
-                    description: JSON.stringify([...useLLMStore.getState().chatHistory, userMsg]),
+                    description: JSON.stringify([...chatHistory]),
                     flags: regexStore.activeFlags
                 }),
                 signal: ctrl.signal
