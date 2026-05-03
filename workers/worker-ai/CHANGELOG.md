@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - implement large text payload resolution and deep match comparison for optimization tasks
 
+### Changed
+- Split monolithic tasks.py into a modular package structure
+
 ## [1.0.0] - 2026-04-30
 
 - Initial release as a separate component.
