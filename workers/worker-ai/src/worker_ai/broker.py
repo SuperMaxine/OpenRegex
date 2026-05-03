@@ -79,6 +79,13 @@ class RedisBroker:
                 for t in docs.trivia:
                     context_parts.append(f"- {t}")
 
+            if target_engine.engine_cheat_sheet:
+                context_parts.append("\nEngine Cheat Sheet (Supported Syntax):")
+                for category in target_engine.engine_cheat_sheet:
+                    context_parts.append(f"[{category.category}]")
+                    for item in category.items:
+                        context_parts.append(f"  - {item.character} : {item.description}")
+
             return "\n".join(context_parts)
         except Exception:
             return f"Technical Engine ID: {engine_id}"
