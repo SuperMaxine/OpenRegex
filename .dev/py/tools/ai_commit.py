@@ -84,6 +84,7 @@ RULES:
 4. Multi-component changes: If multiple scopes are affected, you MUST generate a separate `<type>(<scope>): <subject>` header for EACH scope in the `commit_message` string, separated by blank lines.
    * CRITICAL: DO NOT group multiple scopes under a single fallback header like `chore(general)`. Each affected scope must have its own distinct commit header and body within the final string.
 5. Breaking changes: Add '!' after the scope and a 'BREAKING CHANGE:' footer.
+6. Amend/Squash Preservation: You MUST preserve and combine the intent of the "Historical Commit Messages" along with the new "User Draft Note" or diffs. DO NOT drop previous changes from the final `commit_message` or `changelog_entries`.
 
 You must return a raw JSON object (without markdown code blocks) matching this schema:
 {
@@ -202,6 +203,10 @@ def main():
 
         msg = run_git(["show", "-s", "--format=%s%n%b", commit], root)
         git_logs.append(f"Commit {commit}:\n{msg}")
+
+    # Include currently staged files to ensure AI sees new changes during amend/squash
+    staged_files = run_git_lines(["diff", "--name-only", "--cached"], root)
+    affected_files.update(f for f in staged_files if not f.endswith("CHANGELOG.md"))
 
     if not affected_files:
         print(ConsoleLogger.info("No non-changelog files found in target commits. Skipping AI generation."))
