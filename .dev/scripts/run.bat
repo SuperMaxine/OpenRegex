@@ -15,6 +15,7 @@ echo [4] Check Scopes
 echo [5] AI Commit: Amend Latest
 echo [6] AI Commit: Squash Commits
 echo [7] Update Changelog (Current Branch)
+echo [8] Check Unreleased Changelogs
 echo ====================================
 set /p choice="Select task to run: "
 
@@ -39,6 +40,9 @@ if "!choice!"=="1" (
 ) else if "!choice!"=="7" (
     echo Running update_changelog.py...
     python "!PY_DIR!\tools\update_changelog.py"
+) else if "!choice!"=="8" (
+    echo Running check_unreleased.py...
+    python "!PY_DIR!\tools\check_unreleased.py"
 ) else (
     echo Invalid choice.
 )
