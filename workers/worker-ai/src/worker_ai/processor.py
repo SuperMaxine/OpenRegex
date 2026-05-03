@@ -6,7 +6,7 @@ import threading
 import concurrent.futures
 from worker_ai.ai import LLMClient
 from worker_ai.broker import RedisBroker
-from worker_ai.tasks import handle_optimize, handle_generate
+from worker_ai.tasks import handle_optimize, handle_generate, handle_title
 
 
 def process_task(redis_client: redis.Redis, llm_client: LLMClient, broker: RedisBroker, queue_name: str,
@@ -24,8 +24,10 @@ def process_task(redis_client: redis.Redis, llm_client: LLMClient, broker: Redis
     try:
         if queue_name == "queue:llm:optimize":
             handle_optimize(llm_client, broker, task_dict)
-        else:
+        elif queue_name == "queue:llm:generate":
             handle_generate(llm_client, broker, task_dict)
+        elif queue_name == "queue:llm:title":
+            handle_title(llm_client, broker, task_dict)
     except Exception as e:
         print(f"[Error] Task {task_id} execution failed: {e}", flush=True)
         try:
@@ -39,7 +41,7 @@ def process_task(redis_client: redis.Redis, llm_client: LLMClient, broker: Redis
 
 def listen_and_process(redis_client: redis.Redis, llm_client: LLMClient, version: str, release_date: str):
     max_workers = int(os.environ.get("AI_MAX_WORKERS", 2))
-    print(f"[Worker] LLM worker listening on 'queue:llm:optimize' and 'queue:llm:generate'...", flush=True)
+    print(f"[Worker] LLM worker listening on 'queue:llm:optimize', 'queue:llm:generate', and 'queue:llm:title'...", flush=True)
     print(f"[Worker] ThreadPoolExecutor initialized with {max_workers} workers.", flush=True)
 
     broker = RedisBroker(redis_client)
@@ -52,7 +54,7 @@ def listen_and_process(redis_client: redis.Redis, llm_client: LLMClient, version
             try:
                 semaphore.acquire()
 
-                result = redis_client.brpop(["queue:llm:optimize", "queue:llm:generate"], timeout=1)
+                result = redis_client.brpop(["queue:llm:optimize", "queue:llm:generate", "queue:llm:title"], timeout=1)
                 if not result:
                     semaphore.release()
                     continue
