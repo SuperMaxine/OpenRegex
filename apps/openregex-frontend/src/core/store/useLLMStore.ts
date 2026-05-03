@@ -76,6 +76,7 @@ interface LLMState {
     intent?: string
   ) => void;
   addChatMessage: (msg: ChatMessage) => void;
+  generateChatTitle: (sessionId: string, firstMessage: string) => Promise<void>;
   createNewSession: () => void;
   loadSession: (id: string) => void;
   deleteSession: (id: string) => void;
@@ -264,6 +265,52 @@ export const useLLMStore = create<LLMState>()(
           return { pipelineAttempts: attempts };
         }),
 
+      generateChatTitle: async (sessionId, firstMessage) => {
+        try {
+          const res = await fetch('/api/llm/generate-title', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: firstMessage }),
+          });
+
+          if (!res.ok) return;
+
+          const reader = res.body?.getReader();
+          const decoder = new TextDecoder();
+          if (!reader) return;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.type === 'result' && data.success && data.title) {
+                  set((state) => {
+                    const newSessions = [...(state.sessions || [])];
+                    const targetIndex = newSessions.findIndex((s) => s.id === sessionId);
+                    if (targetIndex !== -1) {
+                      const s = newSessions[targetIndex];
+                      newSessions[targetIndex] = { ...s, preview: data.title };
+                    }
+                    return { sessions: newSessions };
+                  });
+                  return;
+                }
+              } catch (e) {
+                // ignore parse error
+              }
+            }
+          }
+        } catch (e) {
+          // Silently fail for title generation
+        }
+      },
+
       addChatMessage: (msg) =>
         set((state) => {
           let activeId = state.activeSessionId;
@@ -274,7 +321,7 @@ export const useLLMStore = create<LLMState>()(
             newSessions.push({
               id: activeId,
               createdAt: Date.now(),
-              preview: msg.role === 'user' ? msg.content.substring(0, 50) : 'New Chat',
+              preview: 'New Chat',
               messages: []
             });
           }
@@ -282,10 +329,12 @@ export const useLLMStore = create<LLMState>()(
           const targetIndex = newSessions.findIndex(s => s.id === activeId);
           if (targetIndex !== -1) {
             const s = newSessions[targetIndex];
-            const newPreview = s.messages.length === 0 && msg.role === 'user'
-              ? msg.content.substring(0, 50)
-              : s.preview;
-            newSessions[targetIndex] = { ...s, preview: newPreview, messages: [...s.messages, msg] };
+
+            if (s.messages.length === 0 && msg.role === 'user') {
+              setTimeout(() => get().generateChatTitle(activeId!, msg.content), 0);
+            }
+
+            newSessions[targetIndex] = { ...s, messages: [...s.messages, msg] };
           }
 
           return { sessions: newSessions, activeSessionId: activeId };
