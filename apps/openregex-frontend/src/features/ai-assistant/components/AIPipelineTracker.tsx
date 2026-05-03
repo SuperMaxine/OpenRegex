@@ -2,7 +2,6 @@ import React from 'react';
 import {
   BrainCircuit,
   Check,
-  ChevronRight,
   Loader2,
   Sparkles,
   TestTube2,
@@ -28,20 +27,33 @@ interface StepView {
   icon: React.ReactNode;
 }
 
-const getStepClassName = (status: PipelineStepStatus): string => {
+const getStepStyle = (status: PipelineStepStatus) => {
   if (status === 'ok' || status === 'done') {
-    return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+    return {
+      dot: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-500/40 ring-[4px] ring-emerald-500/20',
+      text: 'text-emerald-600 dark:text-emerald-400 font-black',
+      line: 'bg-emerald-500/40'
+    };
   }
-
   if (status === 'active') {
-    return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+    return {
+      dot: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-2 border-purple-500/50 ring-[4px] ring-purple-500/30',
+      text: 'text-purple-600 dark:text-purple-400 font-black',
+      line: 'bg-purple-500/50'
+    };
   }
-
   if (status === 'error') {
-    return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+    return {
+      dot: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-2 border-rose-500/50 ring-[4px] ring-rose-500/20',
+      text: 'text-rose-600 dark:text-rose-400 font-black',
+      line: 'bg-rose-500/40'
+    };
   }
-
-  return 'bg-black/5 dark:bg-white/5 text-theme-muted border-theme-border';
+  return {
+    dot: 'bg-black/5 dark:bg-white/5 text-theme-muted border-2 border-black/10 dark:border-white/10 ring-[4px] ring-black/5 dark:ring-white/5',
+    text: 'text-theme-muted font-bold',
+    line: 'bg-black/5 dark:bg-white/10'
+  };
 };
 
 const StepIcon: React.FC<{
@@ -49,15 +61,15 @@ const StepIcon: React.FC<{
   fallback: React.ReactNode;
 }> = ({ status, fallback }) => {
   if (status === 'active') {
-    return <Loader2 size={13} className="animate-spin" />;
+    return <Loader2 size={15} className="animate-spin" />;
   }
 
   if (status === 'ok' || status === 'done') {
-    return <Check size={13} />;
+    return <Check size={15} strokeWidth={3} />;
   }
 
   if (status === 'error') {
-    return <X size={13} />;
+    return <X size={15} strokeWidth={3} />;
   }
 
   return <>{fallback}</>;
@@ -73,21 +85,21 @@ const AttemptView: React.FC<{
       label: 'AI Thinking',
       description: 'Intent and context',
       status: attempt.thinking,
-      icon: <BrainCircuit size={13} />,
+      icon: <BrainCircuit size={15} />,
     },
     {
       key: 'generation',
-      label: 'Generate Regex',
+      label: 'Generate',
       description: 'Candidate pattern',
       status: attempt.generation,
-      icon: <Sparkles size={13} />,
+      icon: <Sparkles size={15} />,
     },
     {
       key: 'validation',
       label: 'Engine Test',
       description: 'Runtime validation',
       status: attempt.validation,
-      icon: <TestTube2 size={13} />,
+      icon: <TestTube2 size={15} />,
     },
   ];
 
@@ -107,36 +119,39 @@ const AttemptView: React.FC<{
         </div>
       )}
 
-      <div className="flex items-stretch gap-1.5">
-        {steps.map((step, index) => (
-          <React.Fragment key={step.key}>
-            <div
-              className={`flex-1 min-w-0 rounded-lg border px-2 py-2 transition-colors ${getStepClassName(
-                step.status
-              )}`}
-            >
-              <div className="flex items-center gap-1.5">
-                <StepIcon status={step.status} fallback={step.icon} />
+      {/* Node System Layout */}
+      <div className="relative flex items-start justify-between w-full mt-4 mb-3 px-2">
+        {steps.map((step, index) => {
+          const style = getStepStyle(step.status);
 
-                <span className="text-[9px] font-black uppercase tracking-wider truncate">
+          return (
+            <div key={step.key} className="relative z-10 flex flex-col items-center flex-1 gap-2">
+              {/* Connecting Line (drawn from current node to previous) */}
+              {index > 0 && (
+                <div
+                  className={`absolute top-[16px] right-[calc(50%+24px)] w-[calc(100%-48px)] h-[2px] rounded-full transition-colors duration-500 ${style.line}`}
+                />
+              )}
+
+              {/* Node Dot with Double Rings */}
+              <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center transition-all duration-300 ${style.dot}`}>
+                <StepIcon status={step.status} fallback={step.icon} />
+              </div>
+
+              {/* Text Label */}
+              <div className="flex flex-col items-center text-center px-1">
+                <span className={`text-[9px] uppercase tracking-wider transition-colors duration-300 ${style.text}`}>
                   {step.label}
                 </span>
+                {!inline && (
+                  <span className="text-[8px] opacity-60 text-theme-muted mt-0.5 leading-tight hidden sm:block">
+                    {step.description}
+                  </span>
+                )}
               </div>
-
-              {!inline && (
-                <div className="mt-1 text-[9px] opacity-60 truncate">
-                  {step.description}
-                </div>
-              )}
             </div>
-
-            {index < steps.length - 1 && (
-              <div className="flex items-center text-theme-muted opacity-40">
-                <ChevronRight size={13} />
-              </div>
-            )}
-          </React.Fragment>
-        ))}
+          );
+        })}
       </div>
 
       {attempt.error && (
@@ -201,7 +216,7 @@ export const AIPipelineTracker: React.FC<AIPipelineTrackerProps> = ({
       </div>
 
       {!inline && status && (
-        <div className="mt-3 text-[10px] text-theme-muted italic leading-relaxed">
+        <div className="mt-3 text-[10px] text-theme-muted italic leading-relaxed text-center">
           {status}
         </div>
       )}
