@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - YYYY-MM-DD
+## [1.1.0] - 2026-05-04
 
 ### Changed
 - Refactored architecture to allow engines to define flag metadata dynamically
