@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-05-04
+### Changed
+
+- refactor the architecture so engines define flag metadata dynamically
+
 ## [2.1.0] - 2026-05-03
 
 ### Added
