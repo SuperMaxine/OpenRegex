@@ -10,13 +10,13 @@
 
 ## Platform Version Matrix
 
-**Last Update: 2026-05-03**
+**Last Update: 2026-05-04**
 
 ### Component Version Snapshot
 
 | Component | Changelog | Official Version | release date | Develop Version | dev release date |
 |:---|:---|:---|---|---|---|
-| **OpenRegex Frontend** | [View](./apps/openregex-frontend/CHANGELOG.md) | `2.0.0` | 2026.05.03 | `2.0.0.dev` | 2026.05.01 |
+| **OpenRegex Frontend** | [View](./apps/openregex-frontend/CHANGELOG.md) | `2.0.1` | 2026.05.04 | `2.0.0.dev` | 2026.05.01 |
 | **OpenRegex Backend** | [View](./apps/openregex-backend/CHANGELOG.md) | `2.1.0` | 2026.05.03 | N/A | N/A |
 | **Python Shared Library** | [View](./libs/python-shared/CHANGELOG.md) | `1.0.0` | 2026.05.01 | N/A | N/A |
 | **Worker AI** | [View](./workers/worker-ai/CHANGELOG.md) | `1.2.0` | 2026.05.03 | N/A | N/A |
