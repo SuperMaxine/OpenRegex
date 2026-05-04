@@ -1,6 +1,15 @@
 from openregex_libs.models import EngineInfo, EngineCapabilities, EngineDocs, CheatSheetCategory, CheatSheetItem, \
     EngineExample
-from .common import get_pkg_version, CAT_CLASSES, CAT_ANCHORS, CAT_QUANTIFIERS, CAT_GROUPS, CAT_ADVANCED, CPP_VERSION
+from .common import (
+    get_pkg_version,
+    CAT_CLASSES,
+    CAT_ANCHORS,
+    CAT_QUANTIFIERS,
+    CAT_GROUPS,
+    CAT_ADVANCED,
+    CPP_VERSION,
+    build_engine_flags,
+)
 
 _std_lib_raw = get_pkg_version("libstdc++6", "libstdc++-dev")
 STD_LIB_VER = f"libstdc++ {_std_lib_raw}" if _std_lib_raw != "system" else "system"
@@ -12,10 +21,15 @@ engine = EngineInfo(
     engine_regex_lib="std::regex",
     engine_regex_lib_version=STD_LIB_VER,
     engine_label="C++ (std::regex)",
-    engine_capabilities=EngineCapabilities(flags=["i"], supports_lookaround=True, supports_backrefs=True),
+    engine_capabilities=EngineCapabilities(
+        flags=build_engine_flags("i"),
+        supports_lookaround=True,
+        supports_backrefs=True,
+    ),
     engine_docs=EngineDocs(
         trivia=[
             "Standardized in C++11 (originally appearing in TR1), commonly implemented as a backtracking NFA.",
+            "The std::regex implementation license follows the active C++ standard library build (for example, GNU libstdc++ uses GPLv3 with the GCC Runtime Library Exception).",
             "Supports 6 different grammar flavors: ECMAScript, basic, extended, awk, grep, and egrep.",
             "ECMAScript is the default grammar. However, it's strictly based on the ES3 specification, meaning it totally lacks modern regex features like lookbehinds.",
             "Implementation performance varies wildly depending on the compiler (GCC, Clang, and MSVC all have vastly different optimizations).",
@@ -54,6 +68,7 @@ engine = EngineInfo(
                 CheatSheetItem(character="*", description="0 or more times (greedy)"),
                 CheatSheetItem(character="+", description="1 or more times (greedy)"),
                 CheatSheetItem(character="?", description="0 or 1 time (greedy)"),
+                CheatSheetItem(character="{m}", description="Exactly m times"),
                 CheatSheetItem(character="{m,n}", description="Between m and n times (greedy)"),
                 CheatSheetItem(character="*?", description="0 or more times (lazy)"),
                 CheatSheetItem(character="+?", description="1 or more times (lazy)"),
@@ -66,6 +81,7 @@ engine = EngineInfo(
             items=[
                 CheatSheetItem(character="(...)", description="Capturing group"),
                 CheatSheetItem(character="(?:...)", description="Non-capturing group"),
+                CheatSheetItem(character="x|y", description="Alternation (match x or y)"),
                 CheatSheetItem(character="\\1", description="Backreference to capture group 1")
             ]
         ),

@@ -1,5 +1,14 @@
 from openregex_libs.models import EngineInfo, EngineCapabilities, EngineDocs, CheatSheetCategory, CheatSheetItem, EngineExample
-from .common import PYTHON_MAJOR_MINOR, REGEX_VERSION, CAT_CLASSES, CAT_ANCHORS, CAT_QUANTIFIERS, CAT_GROUPS, CAT_ADVANCED
+from .common import (
+    PYTHON_MAJOR_MINOR,
+    REGEX_VERSION,
+    CAT_CLASSES,
+    CAT_ANCHORS,
+    CAT_QUANTIFIERS,
+    CAT_GROUPS,
+    CAT_ADVANCED,
+    build_engine_flags,
+)
 
 engine = EngineInfo(
     engine_id=f"python{PYTHON_MAJOR_MINOR}_regex",
@@ -9,13 +18,14 @@ engine = EngineInfo(
     engine_regex_lib_version=REGEX_VERSION,
     engine_label=f"Python {PYTHON_MAJOR_MINOR} (regex PyPI)",
     engine_capabilities=EngineCapabilities(
-        flags=["i", "m", "s", "x", "a", "f", "w", "b", "e", "p", "r"],
+        flags=build_engine_flags("i", "m", "s", "x", "a", "f", "w", "b", "e", "p", "r"),
         supports_lookaround=True,
         supports_backrefs=True
     ),
     engine_docs=EngineDocs(
         trivia=[
             "Created by Matthew Barnett as a powerful, drop-in alternative to the standard 're' module, aiming to fix its historical limitations.",
+            "The regex package is published under Apache-2.0 AND CNRI-Python licensing terms.",
             "Unlike 're', it supports variable-length lookbehinds (e.g., (?<=a+) is perfectly valid here).",
             "Fully supports Unicode properties (like \\p{Sc} for currency symbols), making it vastly superior for internationalization and complex parsing tasks.",
             "It uniquely allows for approximate 'fuzzy' matching, detecting errors in text based on edit distance (insertions, deletions, and substitutions).",
@@ -62,6 +72,7 @@ engine = EngineInfo(
                 CheatSheetItem(character="*", description="0 or more times (greedy)"),
                 CheatSheetItem(character="+", description="1 or more times (greedy)"),
                 CheatSheetItem(character="?", description="0 or 1 time (greedy)"),
+                CheatSheetItem(character="{m}", description="Exactly m times"),
                 CheatSheetItem(character="{m,n}", description="Between m and n times (greedy)"),
                 CheatSheetItem(character="*?", description="0 or more times (lazy)"),
                 CheatSheetItem(character="+?", description="1 or more times (lazy)"),
@@ -78,6 +89,7 @@ engine = EngineInfo(
             items=[
                 CheatSheetItem(character="(...)", description="Capturing group"),
                 CheatSheetItem(character="(?:...)", description="Non-capturing group"),
+                CheatSheetItem(character="x|y", description="Alternation (match x or y)"),
                 CheatSheetItem(character="(?P<name>...)", description="Named capturing group"),
                 CheatSheetItem(character="(?<name>...)", description="Named capturing group"),
                 CheatSheetItem(character="\\1", description="Backreference to capture group 1"),

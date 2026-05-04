@@ -43,6 +43,7 @@ func registerEngines(ctx context.Context, client *redis.Client) error {
 		EngineDocs: EngineDocs{
 			Trivia: []string{
 				"Based on the RE2 syntax and algorithms.",
+				"Go's standard library (including regexp) is distributed under a BSD-3-Clause style Go license.",
 				"Guarantees linear time O(n) execution, preventing ReDoS.",
 				"Supports inline flags i, m, s, and U.",
 				"Does not support backreferences or lookaround assertions.",
@@ -83,6 +84,7 @@ func registerEngines(ctx context.Context, client *redis.Client) error {
 					{Character: "*", Description: "0 or more times (greedy unless the 'U' flag is set)"},
 					{Character: "+", Description: "1 or more times (greedy unless the 'U' flag is set)"},
 					{Character: "?", Description: "0 or 1 time (greedy unless the 'U' flag is set)"},
+					{Character: "{m}", Description: "Exactly m times"},
 					{Character: "{m,n}", Description: "Between m and n times (greedy unless the 'U' flag is set)"},
 					{Character: "*?", Description: "0 or more times (lazy unless the 'U' flag is set)"},
 					{Character: "+?", Description: "1 or more times (lazy unless the 'U' flag is set)"},
@@ -95,6 +97,7 @@ func registerEngines(ctx context.Context, client *redis.Client) error {
 				Items: []CheatSheetItem{
 					{Character: "(...)", Description: "Capturing group"},
 					{Character: "(?:...)", Description: "Non-capturing group"},
+					{Character: "x|y", Description: "Alternation (match x or y)"},
 					{Character: "(?P<name>...)", Description: "Named capturing group"},
 					{Character: "(?<name>...)", Description: "Named capturing group"},
 				},

@@ -177,12 +177,13 @@ of the available settings to manage SEO, rate limits, AI worker parameters, and 
 | Component    | Environment Variable              | Default Value         | Explanation                                                                                                    |
 |--------------|:----------------------------------|:----------------------|:---------------------------------------------------------------------------------------------------------------|
 | Frontend     | **`ROBOTS_META`**                 | `"noindex, nofollow"` | Controls search engine indexing for production environments. Set to `"index, follow"` to make the site public. |
+| Frontend     | **`VITE_APP_TERMS`**              | `""`                  | Toggles the Terms of Service and Cookie Policy popup. Use accept to disable it.                                |
 | Backend      | **`RATE_LIMIT_REQUESTS`**         | `60`                  | The maximum number of requests allowed per engine per minute to prevent abuse.                                 |
 | Backend      | **`RATE_LIMIT_WINDOW`**           | `60`                  | The time window (in seconds) for the rate-limiting threshold.                                                  |
 | Backend      | **`API_AI_ENDPOINT_ENABLE`**      | `"false"`             | Toggles the availability of the AI assistant endpoint (`worker-ai`).                                           |
 | Backend      | **`API_REGEX_ENDPOINT_ENABLE`**   | `"true"`              | Toggles the core regex evaluation endpoint.                                                                    |
 | Backend      | **`MAX_AI_QUEUE`**                | `10`                  | Max users allowed in the human-agent waitlist before new requests are rejected.                                |
-| AI Worker    | **`AI_MAX_WORKERS`**              | `"2"`                 | The maximum number of concurrent AI worker processes.                                                          |
+| AI Worker    | **`AI_MAX_WORKERS`**              | `2`                   | The maximum number of concurrent AI worker processes.                                                          |
 | AI Worker    | **`LLM_ENDPOINT`**                | `""`                  | The base URL for the LLM service. Can be pointed to a proxy like LiteLLM.                                      |
 | AI Worker    | **`LLM_MODEL`**                   | `""`                  | The specific LLM model used for generating, explaining, and optimizing patterns.                               |
 | AI Worker    | **`LLM_API_KEY`**                 | `""`                  | Your secret API key for the chosen LLM provider.                                                               |
@@ -212,7 +213,7 @@ OpenRegex is built on strict architectural guidelines to ensure high performance
 
 ---
 
-# OpenRegex Platform Changelog
+## OpenRegex Platform Changelog
 
 This is the central orchestration log for the OpenRegex ecosystem. Detailed technical logs for individual components are
 maintained within their respective directories:
@@ -221,8 +222,49 @@ maintained within their respective directories:
 
 ---
 
+## 📜 Licensing
+
+OpenRegex is licensed under the Apache License 2.0.
+
+Worker components are executed as isolated services and may include third-party libraries under their own licenses (
+e.g., BSD, MIT, LGPL). These licenses apply only to the respective worker environments and do not affect the licensing
+of the core platform.
+
+For a full list of third-party dependencies and their licenses, see:
+[Third-Party Licenses & Notices](THIRD-PARTY-LICENSES.md)
+
+---
+
+## Compliance Guide
+
+### If you use OpenRegex:
+
+* No obligations (Apache 2.0 allows commercial use)
+
+### If you redistribute:
+
+You MUST:
+
+* include LICENSE
+* include NOTICE
+* preserve attribution
+
+### If you modify:
+
+* mark changes
+* keep license notices
+
+### Third-party software:
+
+Each worker includes separate licenses.
+See THIRD-PARTY-LICENSES.md
+
+
+---
+
 ## ❤️ Support
 
 You like my work? Just sponsor me!
 
 ☕ [![GitHub sponsors](https://img.shields.io/github/sponsors/sunnev)]() ☕
+

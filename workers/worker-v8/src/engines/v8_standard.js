@@ -5,7 +5,8 @@ import {
   CAT_ANCHORS,
   CAT_QUANTIFIERS,
   CAT_GROUPS,
-  CAT_ADVANCED
+  CAT_ADVANCED,
+  buildEngineFlags
 } from './common.js';
 
 export const engine = {
@@ -16,13 +17,14 @@ export const engine = {
   engine_regex_lib_version: V8_VERSION,
   engine_label: "JavaScript (V8)",
   engine_capabilities: {
-    flags: ["d", "g", "i", "m", "s", "u", "v", "y"],
+    flags: buildEngineFlags("d", "g", "i", "m", "s", "u", "v", "y"),
     supports_lookaround: true,
     supports_backrefs: true
   },
   engine_docs: {
     trivia: [
       "Native RegExp engine running in Node.js (V8).",
+      "V8 is distributed under the BSD-3-Clause license.",
       "Supports modern ECMAScript RegExp features including named captures, lookbehind, match indices, Unicode property escapes, and the 'v' flag when available in the runtime.",
       "Uses a backtracking engine for many patterns and can be susceptible to ReDoS if patterns are poorly optimized.",
       "The 'u' and 'v' flags are mutually exclusive Unicode modes."
@@ -61,6 +63,7 @@ export const engine = {
         { character: "*", description: "0 or more times, greedy" },
         { character: "+", description: "1 or more times, greedy" },
         { character: "?", description: "0 or 1 time, greedy" },
+        { character: "{m}", description: "Exactly m times" },
         { character: "{m,n}", description: "Between m and n times, greedy" },
         { character: "*?", description: "0 or more times, lazy" },
         { character: "+?", description: "1 or more times, lazy" },
@@ -73,6 +76,7 @@ export const engine = {
       items: [
         { character: "(...)", description: "Capturing group" },
         { character: "(?:...)", description: "Non-capturing group" },
+        { character: "x|y", description: "Alternation (match x or y)" },
         { character: "(?<name>...)", description: "Named capturing group" },
         { character: "\\1", description: "Backreference to capture group 1" },
         { character: "\\k<name>", description: "Backreference to a named capture group" }
@@ -90,19 +94,6 @@ export const engine = {
         { character: "[\\p{Decimal_Number}--[0-9]]", description: "Set subtraction; requires 'v' flag" },
         { character: "(?i:...)", description: "Scoped modifier: case-insensitive; requires runtime support for RegExp modifiers" },
         { character: "(?-i:...)", description: "Scoped modifier: disable case-insensitive; requires runtime support for RegExp modifiers" }
-      ]
-    },
-    {
-      category: "Flags",
-      items: [
-        { character: "d", description: "Return start and end indices for matches and capturing groups" },
-        { character: "g", description: "Global matching; find all matches and advance lastIndex" },
-        { character: "i", description: "Case-insensitive matching" },
-        { character: "m", description: "Multiline mode for ^ and $" },
-        { character: "s", description: "DotAll mode; dot matches line terminators" },
-        { character: "u", description: "Unicode-aware mode" },
-        { character: "v", description: "Unicode sets mode; enables set operations and string properties" },
-        { character: "y", description: "Sticky matching at lastIndex" }
       ]
     }
   ],
