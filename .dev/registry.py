@@ -2,7 +2,7 @@
 
 # This is the single source of truth for all component versions in the OpenRegex monorepo.
 VERSIONS = {
-    "apps/openregex-frontend": "2.0.0",
+    "apps/openregex-frontend": "2.0.1",
     "apps/openregex-backend": "2.1.0",
     "libs/python-shared": "1.0.0",
     "workers/worker-ai": "1.2.0",
