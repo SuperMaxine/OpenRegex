@@ -15,7 +15,14 @@ export const RegexTooltip: React.FC<RegexTooltipProps> = ({
   isVisible
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({ opacity: 0, pointerEvents: 'none' });
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({
+    opacity: 0,
+    pointerEvents: 'none',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    zIndex: -1
+  });
 
   useEffect(() => {
     if (isVisible && description && targetRef.current) {
@@ -74,7 +81,14 @@ export const RegexTooltip: React.FC<RegexTooltipProps> = ({
         document.removeEventListener('scroll', updatePos, true);
       };
     } else {
-      setTooltipStyle({ opacity: 0, pointerEvents: 'none' });
+      setTooltipStyle({
+        opacity: 0,
+        pointerEvents: 'none',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: -1
+      });
     }
   }, [isVisible, description, targetRef]);
 

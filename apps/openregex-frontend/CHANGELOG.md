@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - YYYY-MM-DD
+
+### Fixed
+- prevent scrollbar flash by setting initial tooltip position to fixed
+
 ## [2.0.0] - 2026-05-03
+
 ### Fixed
 - allow vertical scrolling on mobile by replacing fixed height and overflow-hidden with min-h-screen
 
