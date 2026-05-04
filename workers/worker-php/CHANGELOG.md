@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-05-04
+
+### Changed
+
+- Update engine registry
+- Update architecture for dynamic flag metadata definition
+
 ## [1.0.1] - 2026-05-02
 
 ### Fixed

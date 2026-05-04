@@ -1,6 +1,15 @@
 from openregex_libs.models import EngineInfo, EngineCapabilities, EngineDocs, CheatSheetCategory, CheatSheetItem, \
     EngineExample
-from .common import get_pkg_version, CAT_CLASSES, CAT_ANCHORS, CAT_QUANTIFIERS, CAT_GROUPS, CAT_ADVANCED, CPP_VERSION
+from .common import (
+    get_pkg_version,
+    CAT_CLASSES,
+    CAT_ANCHORS,
+    CAT_QUANTIFIERS,
+    CAT_GROUPS,
+    CAT_ADVANCED,
+    CPP_VERSION,
+    build_engine_flags,
+)
 
 RE2_LIB_VER = get_pkg_version("re2", "libre2-dev", "libre2-9", "libre2-11")
 
@@ -11,10 +20,15 @@ engine = EngineInfo(
     engine_regex_lib="re2",
     engine_regex_lib_version=RE2_LIB_VER,
     engine_label="C++ (RE2)",
-    engine_capabilities=EngineCapabilities(flags=["i", "m", "s"], supports_lookaround=False, supports_backrefs=False),
+    engine_capabilities=EngineCapabilities(
+        flags=build_engine_flags("i", "m", "s"),
+        supports_lookaround=False,
+        supports_backrefs=False,
+    ),
     engine_docs=EngineDocs(
         trivia=[
             "Designed by Russ Cox at Google specifically to eliminate Regular Expression Denial of Service (ReDoS) vulnerabilities.",
+            "RE2 is distributed under the BSD-3-Clause license.",
             "Executes in guaranteed linear time O(n) relative to the length of the input string by utilizing deterministic finite automata (DFA) instead of backtracking.",
             "To maintain this strict mathematical guarantee, RE2 completely abandons backreferences and lookaround assertions.",
             "Allows setting a 'max_mem' budget; if compiling the DFA state machine exceeds this memory limit, it gracefully falls back to an NFA simulation.",
@@ -56,6 +70,7 @@ engine = EngineInfo(
                 CheatSheetItem(character="*", description="0 or more times (greedy)"),
                 CheatSheetItem(character="+", description="1 or more times (greedy)"),
                 CheatSheetItem(character="?", description="0 or 1 time (greedy)"),
+                CheatSheetItem(character="{m}", description="Exactly m times"),
                 CheatSheetItem(character="{m,n}", description="Between m and n times (greedy)"),
                 CheatSheetItem(character="*?", description="0 or more times (lazy)"),
                 CheatSheetItem(character="+?", description="1 or more times (lazy)"),
@@ -68,6 +83,7 @@ engine = EngineInfo(
             items=[
                 CheatSheetItem(character="(...)", description="Capturing group"),
                 CheatSheetItem(character="(?:...)", description="Non-capturing group"),
+                CheatSheetItem(character="x|y", description="Alternation (match x or y)"),
                 CheatSheetItem(character="(?P<name>...)", description="Named capturing group (Python/RE2 syntax)")
             ]
         ),

@@ -1,9 +1,7 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { ASTNode } from '../../../core/types';
 import { getGroupColorClasses } from '../../../shared/utils/colors';
 import { isCheatSheetItemHovered } from '../../../shared/utils/hoverMatcher';
-import { useRegexStore } from '../../../core/store/useRegexStore';
-import { RegexTooltip } from './RegexTooltip';
 
 interface RegexViewerNodeProps {
   node: ASTNode;
@@ -20,7 +18,8 @@ interface RegexViewerNodeProps {
   parentGroupId?: number;
   nonCapturingPrefix?: string;
   openingToken?: string;
-  cheatSheetItems?: string[];
+  cheatSheetMap?: Map<string, string>;
+  cheatSheetItems?: any[];
 }
 
 interface RegexTextTokenProps {
@@ -31,46 +30,50 @@ interface RegexTextTokenProps {
   isBoundary?: boolean;
   parentGroupId?: number;
   finalClassName: string;
-  tooltipToken: string;
-  tooltipDescription: string;
-  isDirectlyHovered: boolean;
 }
 
 const RegexTextToken: React.FC<RegexTextTokenProps> = ({
-  node, t, tokenStr, isToken, isBoundary, parentGroupId, finalClassName, tooltipToken, tooltipDescription, isDirectlyHovered
+  node, t, tokenStr, isToken, isBoundary, parentGroupId, finalClassName
 }) => {
-  const spanRef = useRef<HTMLSpanElement>(null);
-
   return (
-    <>
-      <span
-        ref={spanRef}
-        data-token={isToken ? tokenStr : undefined}
-        data-token-index={isToken ? node.startIndex : undefined}
-        data-group-id={isBoundary && parentGroupId !== undefined ? parentGroupId : undefined}
-        className={finalClassName.trim().replace(/\s+/g, ' ')}
-      >
-        {t}
-      </span>
-      <RegexTooltip
-        targetRef={spanRef}
-        token={tooltipToken}
-        description={tooltipDescription}
-        isVisible={isDirectlyHovered}
-      />
-    </>
+    <span
+      data-token={isToken ? tokenStr : undefined}
+      data-token-index={isToken ? node.startIndex : undefined}
+      data-group-id={isBoundary && parentGroupId !== undefined ? parentGroupId : undefined}
+      className={finalClassName.trim().replace(/\s+/g, ' ')}
+    >
+      {t}
+    </span>
   );
 };
 
+const getSymbolClass = (t: string): string => {
+  if (t.startsWith('\\')) {
+    if (/^\\[bBAZzGMmK]/.test(t) || t.startsWith('\\b{')) return "text-sky-600/70 dark:text-sky-200/40";
+    if (/^\\[wWdDsShHvVXpP]/.test(t)) return "text-orange-600/70 dark:text-orange-200/40";
+    if (/^\\[xUu0-9]/.test(t) || /^\\[afnrt]/.test(t)) return "text-emerald-600/70 dark:text-emerald-200/40";
+    if (/^\\[1-9]/.test(t) || /^\\[kg]/.test(t)) return "text-indigo-600/70 dark:text-indigo-200/40";
+    return "text-orange-600/70 dark:text-orange-200/40";
+  }
+  if (t.startsWith('(*')) return "text-rose-600/70 dark:text-rose-200/40";
+  if (t.startsWith('[') || t.startsWith('[^')) return "text-amber-600/70 dark:text-amber-200/40";
+  if (/^[*+?][?+]?$/.test(t) || t.startsWith('{')) return "text-purple-600/70 dark:text-purple-200/40";
+  if (t === '^' || t === '$' || t === '|') return "text-sky-600/70 dark:text-sky-200/40";
+  if (t === '.') return "text-rose-600/70 dark:text-rose-200/40";
+  return "";
+};
+
 export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
-  node, activeGroupIds, hoveredGroupId, hoveredToken, hoveredTokenIndex, activeToken, activeTokenIndex, isBoundary, forceBoundaryHighlight, forceBoundaryActive, boundaryClasses, parentGroupId, nonCapturingPrefix, openingToken, cheatSheetItems
+  node, activeGroupIds, hoveredGroupId, hoveredToken, hoveredTokenIndex, activeToken, activeTokenIndex, isBoundary, forceBoundaryHighlight, forceBoundaryActive, boundaryClasses, parentGroupId, nonCapturingPrefix, openingToken, cheatSheetMap, cheatSheetItems
 }) => {
   if (node.type === 'text') {
     const t = node.text || "";
 
     const isSupported = (tokenToTest: string) => {
-      if (!cheatSheetItems || cheatSheetItems.length === 0) return true;
-      return cheatSheetItems.some(item => isCheatSheetItemHovered(tokenToTest, item));
+      if (tokenToTest === '|') return true;
+      if (!cheatSheetMap || cheatSheetMap.size === 0) return true;
+      if (cheatSheetMap.has(tokenToTest)) return true;
+      return cheatSheetItems?.some(item => isCheatSheetItemHovered(tokenToTest, item.character));
     };
 
     let symbolClass = "";
@@ -85,19 +88,7 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
         tokenStr = nonCapturingPrefix || openingToken || '(';
       }
     } else {
-      if (t.startsWith('\\')) {
-        if (t.length > 1 && /[^a-zA-Z0-9]/.test(t.charAt(1))) {
-          symbolClass = "";
-        } else {
-          symbolClass = "text-orange-600/70 dark:text-orange-200/40";
-        }
-      }
-      else if (t.startsWith('[^')) symbolClass = "text-amber-600/70 dark:text-amber-200/40";
-      else if (t.startsWith('[')) symbolClass = "text-amber-600/70 dark:text-amber-200/40";
-      else if (/^[*+?][?+]?$/.test(t)) symbolClass = "text-purple-600/70 dark:text-purple-200/40";
-      else if (t === '^' || t === '$' || t === '|') symbolClass = "text-sky-600/70 dark:text-sky-200/40";
-      else if (t.startsWith('{') || t === '}') symbolClass = "text-purple-600/70 dark:text-purple-200/40";
-      else if (t === '.') symbolClass = "text-rose-600/70 dark:text-rose-200/40";
+      symbolClass = getSymbolClass(t);
     }
 
     const supported = isSupported(tokenStr) || isSupported(t);
@@ -107,21 +98,6 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
     }
 
     const isToken = Boolean((symbolClass !== "" || isBoundary) && supported);
-
-    let tooltipDescription = "";
-    let tooltipToken = "";
-
-    if (isToken) {
-      const { engines, selectedEngineId } = useRegexStore.getState();
-      const activeEngine = engines.find(e => e.engine_id === selectedEngineId);
-      const allItems = activeEngine?.engine_cheat_sheet?.flatMap(cat => cat.items) || [];
-      const match = allItems.find(item => isCheatSheetItemHovered(tokenStr, item.character) || isCheatSheetItemHovered(t, item.character));
-
-      if (match) {
-        tooltipToken = match.character;
-        tooltipDescription = match.description;
-      }
-    }
 
     const isHovered = !!forceBoundaryHighlight || (isToken && (
       hoveredTokenIndex !== null
@@ -141,8 +117,6 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
 
     const isHighlighted = isHovered || isActive;
 
-    const isDirectlyHovered = Boolean(isToken && hoveredTokenIndex !== null && hoveredTokenIndex === node.startIndex);
-
     const activeTokenClass = isHighlighted
       ? "rounded-sm z-20 bg-theme-primary/20 !text-theme-primary ring-1 ring-theme-primary/40 drop-shadow-sm dark:bg-theme-primary/15 dark:!text-theme-primary dark:ring-1 dark:ring-theme-primary/40 dark:drop-shadow-none"
       : (!isBoundary && isToken ? "cursor-pointer" : "");
@@ -160,9 +134,6 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
         isBoundary={isBoundary}
         parentGroupId={parentGroupId}
         finalClassName={finalClassName}
-        tooltipToken={tooltipToken}
-        tooltipDescription={tooltipDescription}
-        isDirectlyHovered={isDirectlyHovered}
       />
     );
   }
@@ -197,7 +168,7 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
             if (match) opToken = match[0];
             else opToken = "(";
         } else {
-            const match = prefix.match(/^\(\?(?:<=|<!|[=!:>|]|[a-zA-Z-]+:)/);
+            const match = prefix.match(/^\(\?(?:<=|<!|[=!:>|~]|[a-zA-Z-]+:?|\([^\)]+\))/);
             if (match) nonCapPrefix = match[0];
             else nonCapPrefix = node.children[0]?.text;
         }
@@ -239,6 +210,7 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
               parentGroupId={node.isCapturing ? node.id : undefined}
               nonCapturingPrefix={nonCapPrefix}
               openingToken={node.isCapturing ? opToken : undefined}
+              cheatSheetMap={cheatSheetMap}
               cheatSheetItems={cheatSheetItems}
             />
           );
@@ -260,6 +232,7 @@ export const RegexViewerNode: React.FC<RegexViewerNodeProps> = ({
              hoveredTokenIndex={hoveredTokenIndex}
              activeToken={activeToken}
              activeTokenIndex={activeTokenIndex}
+             cheatSheetMap={cheatSheetMap}
              cheatSheetItems={cheatSheetItems}
           />
         ))}

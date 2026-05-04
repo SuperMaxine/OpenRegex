@@ -1,6 +1,6 @@
 from openregex_libs.models import EngineInfo, EngineCapabilities, EngineDocs, CheatSheetCategory, CheatSheetItem, EngineExample
 from .common import get_pkg_version, CAT_CLASSES, CAT_ANCHORS, CAT_QUANTIFIERS, \
-    CAT_GROUPS, C_VERSION
+    CAT_GROUPS, C_VERSION, build_engine_flags
 
 LIBC_VER = get_pkg_version("libc6", "libc-dev")
 
@@ -11,10 +11,15 @@ engine = EngineInfo(
     engine_regex_lib="regex.h",
     engine_regex_lib_version=LIBC_VER,
     engine_label="C (POSIX regex.h)",
-    engine_capabilities=EngineCapabilities(flags=["i", "m"], supports_lookaround=False, supports_backrefs=True),
+    engine_capabilities=EngineCapabilities(
+        flags=build_engine_flags("i", "m"),
+        supports_lookaround=False,
+        supports_backrefs=True,
+    ),
     engine_docs=EngineDocs(
         trivia=[
             "Native C POSIX Regular Expression library built into the standard C library (libc/glibc).",
+            "Licensing follows the host C library build (for example, glibc is LGPL-2.1-or-later).",
             "Executes using the standard regcomp/regexec functions under the hood.",
             "OpenRegex strictly uses the REG_EXTENDED flag to enable modern POSIX Extended Regular Expressions (ERE) over basic ones.",
             "Lacks many modern PCRE features like lookarounds, non-capturing groups, and specific character class escapes like \\d or \\w.",
@@ -47,6 +52,7 @@ engine = EngineInfo(
                 CheatSheetItem(character="*", description="0 or more times (greedy)"),
                 CheatSheetItem(character="+", description="1 or more times (greedy)"),
                 CheatSheetItem(character="?", description="0 or 1 time (greedy)"),
+                CheatSheetItem(character="{m}", description="Exactly m times"),
                 CheatSheetItem(character="{m,n}", description="Between m and n times (greedy)")
             ]
         ),
@@ -54,6 +60,7 @@ engine = EngineInfo(
             category=CAT_GROUPS,
             items=[
                 CheatSheetItem(character="(...)", description="Capturing group"),
+                CheatSheetItem(character="x|y", description="Alternation (match x or y)"),
                 CheatSheetItem(character="\\1", description="Backreference to capture group 1 (GNU libc extension; not portable POSIX ERE)", engine_cheat=True)
             ]
         )

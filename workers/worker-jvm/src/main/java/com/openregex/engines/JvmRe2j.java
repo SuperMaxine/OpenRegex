@@ -12,13 +12,14 @@ public class JvmRe2j {
             "1.7",
             "Java (RE2J)",
             new EngineCapabilities(
-                    List.of("i", "m", "s", "U"),
+                    Common.flags("i", "m", "s", "U"),
                     false,
                     false
             ),
             new EngineDocs(
                     List.of(
                             "Google's RE2 implementation for the JVM.",
+                            "RE2/J is distributed under a BSD-style license derived from the Go license.",
                             "Guarantees linear O(n) execution time relative to input size.",
                             "Strictly avoids backtracking, making it immune to ReDoS caused by catastrophic backtracking.",
                             "Does not support lookarounds, backreferences, atomic groups, or possessive quantifiers."
@@ -59,6 +60,7 @@ public class JvmRe2j {
                                     new CheatSheetItem("*", "0 or more times (greedy)"),
                                     new CheatSheetItem("+", "1 or more times (greedy)"),
                                     new CheatSheetItem("?", "0 or 1 time (greedy)"),
+                                    new CheatSheetItem("{m}", "Exactly m times"),
                                     new CheatSheetItem("{m,n}", "Between m and n times (greedy, with repetition bounds up to 1000)"),
                                     new CheatSheetItem("*?", "0 or more times (lazy)"),
                                     new CheatSheetItem("+?", "1 or more times (lazy)"),
@@ -71,6 +73,7 @@ public class JvmRe2j {
                             List.of(
                                     new CheatSheetItem("(...)", "Capturing group"),
                                     new CheatSheetItem("(?:...)", "Non-capturing group"),
+                                    new CheatSheetItem("x|y", "Alternation (match x or y)"),
                                     new CheatSheetItem("(?P<name>...)", "Named capturing group"),
                                     new CheatSheetItem("(?<name>...)", "Named capturing group")
                             )
